@@ -20,7 +20,7 @@ All code-writing rules for Python projects.
 
 - Formatting and linting are governed by `ruff` (configured via `ruff.toml`). `ruff` is the single source of truth — no `black`, no `isort`, no `flake8`. Run `ruff check . && ruff format --check .` to verify.
 
-- **0 warnings required.** Ruff must return zero errors and zero warnings on every commit. Never suppress or skip a ruff rule without an explicit instruction from the user. No `# noqa`, no `per-file-ignores`, no rule exclusions unless the user explicitly requests it.
+- **0 warnings required.** Ruff must return zero errors and zero warnings on every commit. Never suppress or skip a ruff rule without an explicit instruction from the user. No `#noqa`, no `per-file-ignores`, no rule exclusions unless the user explicitly requests it.
 
 ## Language Usage
 
@@ -128,7 +128,7 @@ All code-writing rules for Python projects.
 - Prefer `pathlib.Path` over `os.path` for all path operations.
 
   ```python
-  config_dir = Path.home() / ".config" / "myapp"
+  config_dir = Path.home() / ".config" / "time_d"
   config_dir.mkdir(parents=True, exist_ok=True)
   ```
 
@@ -217,16 +217,16 @@ import typer
 from pydantic import BaseModel
 
 # local
-from myproject.core import UserService
-from myproject.config import settings
+from time_d.core import UserService
+from time_d.config import settings
 ```
 
 ### Exports
 
-- In `__init__.py` files, declare the public API with `__all__`. Ruff respects `__all__`, so you don't need `import X as X` or `# noqa` comments.
+- In `__init__.py` files, declare the public API with `__all__`. Ruff respects `__all__`, so you don't need `import X as X` or `#noqa` comments.
 
 ```python
-# myproject/core/__init__.py
+# time_d/core/__init__.py
 __all__ = ["UserService", "OrderService", "User", "Order"]
 ```
 
@@ -249,7 +249,6 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
 
 - **2 blank lines** between top-level definitions (functions, classes).
 - **2 blank lines** after the last import.
-- **1 blank line** between class methods.
 
 - **Important:** Blank line rules may overlap. When multiple rules require a blank line at the same position, use exactly **one blank line**. Never use two or more consecutive blank lines.
 
@@ -305,42 +304,52 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
     ...
   ```
 
-  After a closing `# ------------------------------------------------` or `# MARK:` section header — a blank line before the next statement.
+  ```python
+  # MARK: Calculation helpers
+  # ------------------------------------------------
+
+  def calculate_time(...) -> float:
+    ...
+
+  # ------------------------------------------------
+
+  def calculate_point(...) -> Point:
+    ...
+
+  # ------------------------------------------------
+
+  def validate_calculation(...) -> None:
+    ...
+  ```
 
   ```python
   # MARK: Private Helpers
   # ------------------------------------------------
 
-  def _build_response(input: Any) -> Response:
+  def _build_response(...) -> Response:
+    ...
+
+  # ------------------------------------------------
+
+  def _validate_input(...) -> None:
+    ...
+
+  # MARK: Complex calculation algorithm
+  # ------------------------------------------------
+
+  def _calculate_matrix(...) -> Matrix:
     ...
   ```
 
-- **1 blank line** after class header between `__init__` parameters and the first method.
+- After a closing `# ------------------------------------------------` or `# MARK:` section header — a blank line before the next statement.
 
   ```python
-  @dataclass
-  class CalculationService(
-    # repositories:
-    item_repository: ItemRepository,
-    result_repository: ResultRepository,
+  # MARK: Private Helpers
+  # ------------------------------------------------
 
-    # services:
-    state_service: StateService,
-    persistence_service: PersistenceService,
-  ):
-
-    # MARK: calculateAndPersist
-    # ------------------------------------------------
-
-    def calculate_and_persist(
-      entity: OrderEntity,
-      item: ItemEntity | None,
-      time: datetime,
-    ) -> CalculationState:
-      ...
+  def _build_response(...) -> Response:
+    ...
   ```
-
-  **Note:** The blank line after the class header is the required 1 blank line. The MARK comment follows immediately after it. These blank lines between `__init__`/class param groups are mandatory. When blank line rules overlap, use only one blank line.
 
 - **Blank line before control flow** — insert a blank line before every `if`, `elif`, `else`, `for`, `while`, `try`, `except`, `finally`, `with`, `raise`, `assert`, `return`, `continue` that sits at the same indentation level as its containing block.
 
@@ -637,7 +646,7 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
 - Reference constants via `Constants.Class.FIELD` — never inline magic values.
 
 ```python
-# myproject/constants.py
+# time_d/constants.py
 from math import pi
 
 class Math:
@@ -666,7 +675,7 @@ class Pattern:
 Usage:
 
 ```python
-from myproject.constants import Math, Entity
+from time_d.constants import Math, Entity
 
 
 earth_r = Math.EARTH_RADIUS_M

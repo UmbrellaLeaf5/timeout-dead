@@ -1,0 +1,15 @@
+"""Shared fixtures for time-d tests."""
+
+import tempfile
+from collections.abc import Iterator
+from pathlib import Path
+
+import pytest
+
+
+@pytest.fixture
+def temp_dir() -> Iterator[Path]:
+  """Временная директория для тестов."""
+
+  with tempfile.TemporaryDirectory() as tmp:
+    yield Path(tmp)
