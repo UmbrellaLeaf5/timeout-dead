@@ -157,7 +157,7 @@ def run_command(
   timer: threading.Timer | None = None
 
   try:
-    creationflags = subprocess.CREATE_NEW_PROCESS_GROUP if _is_windows() else 0
+    creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if _is_windows() else 0
     start_new_session = not _is_windows()
 
     process = subprocess.Popen(
