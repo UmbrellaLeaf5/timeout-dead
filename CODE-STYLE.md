@@ -128,7 +128,7 @@ All code-writing rules for Python projects.
 - Prefer `pathlib.Path` over `os.path` for all path operations.
 
   ```python
-  config_dir = Path.home() / ".config" / "time_d"
+  config_dir = Path.home() / ".config" / "timeout_dead"
   config_dir.mkdir(parents=True, exist_ok=True)
   ```
 
@@ -217,8 +217,8 @@ import typer
 from pydantic import BaseModel
 
 # local
-from time_d.core import UserService
-from time_d.config import settings
+from timeout_dead.core import UserService
+from timeout_dead.config import settings
 ```
 
 ### Exports
@@ -226,7 +226,7 @@ from time_d.config import settings
 - In `__init__.py` files, declare the public API with `__all__`. Ruff respects `__all__`, so you don't need `import X as X` or `#noqa` comments.
 
 ```python
-# time_d/core/__init__.py
+# timeout_dead/core/__init__.py
 __all__ = ["UserService", "OrderService", "User", "Order"]
 ```
 
@@ -646,7 +646,7 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
 - Reference constants via `Constants.Class.FIELD` — never inline magic values.
 
 ```python
-# time_d/constants.py
+# timeout_dead/constants.py
 from math import pi
 
 class Math:
@@ -675,7 +675,7 @@ class Pattern:
 Usage:
 
 ```python
-from time_d.constants import Math, Entity
+from timeout_dead.constants import Math, Entity
 
 
 earth_r = Math.EARTH_RADIUS_M

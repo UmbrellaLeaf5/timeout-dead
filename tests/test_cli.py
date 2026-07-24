@@ -1,4 +1,4 @@
-"""Тесты CLI утилиты time-d."""
+"""Тесты CLI утилиты timeout-dead."""
 
 import os
 import signal
@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from time_d.cli import (
+from timeout_dead.cli import (
   _Const,
   _find_bash,
   _is_windows,
@@ -30,10 +30,10 @@ def _run_cli(
   *args: str,
   timeout: int = 10,
 ) -> subprocess.CompletedProcess[str]:
-  """Запускает time-d как subprocess."""
+  """Запускает timeout-dead как subprocess."""
 
   return subprocess.run(
-    [sys.executable, "-m", "time_d.cli", *args],
+    [sys.executable, "-m", "timeout_dead.cli", *args],
     capture_output=True,
     text=True,
     timeout=timeout,

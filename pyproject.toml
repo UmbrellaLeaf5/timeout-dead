@@ -1,24 +1,59 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel", "setuptools-scm>=8.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "time-d"
-version = "0.1.0"
-description = "Lightweight command timeout utility with zero dependencies"
+name = "timeout-dead"
+dynamic = ["version"]
+description = "Lightweight command timeout utility with zero runtime dependencies"
 readme = "README.md"
-authors = [
-  { name = "UmbrellaLeaf5" },
-]
-license = { text = "Unlicense" }
 requires-python = ">=3.10"
+license = "Unlicense"
+authors = [
+  { name = "Dmitry Krivoruchko", email = "umbrella.leaf.for.work@gmail.com" },
+]
+keywords = [
+  "timeout",
+  "cli",
+  "command",
+  "process",
+  "kill",
+  "signal",
+  "developer-tools",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: System :: System Shells",
+  "Topic :: Utilities",
+]
 dependencies = []
 
 [project.scripts]
-time-d = "time_d.cli:main"
+timeout-dead = "timeout_dead.cli:main"
+timeout_dead = "timeout_dead.cli:main"
+time-d = "timeout_dead.cli:main"
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[project.urls]
+Repository = "https://github.com/UmbrellaLeaf5/timeout-dead"
+Issues = "https://github.com/UmbrellaLeaf5/timeout-dead/issues"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pyright>=1.1.409"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
+write_to = "src/timeout_dead/_version.py"
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = ["twine>=6.2.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

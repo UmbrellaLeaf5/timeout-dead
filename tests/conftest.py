@@ -1,4 +1,4 @@
-"""Shared fixtures for time-d tests."""
+"""Shared fixtures for timeout-dead tests."""
 
 import tempfile
 from collections.abc import Iterator

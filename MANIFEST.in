@@ -1,0 +1,5 @@
+include README.md
+include LICENSE
+
+prune tests/__pycache__
+prune src/timeout_dead.egg-info
