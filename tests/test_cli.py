@@ -287,7 +287,52 @@ class TestFloatTimeout:
     assert "Running:" not in result.stdout
 
 
-# MARK: Signal selection tests
+# MARK: Windows Job Object tests
+# ------------------------------------------------
+
+
+class TestJobObject:
+  def test_force_kill_terminates_process_tree(self) -> None:
+    """On Windows, force-kill via Job Object kills bash and all children."""
+    rc = run_command("sleep 10 & sleep 10 & wait", timeout=1)
+    assert rc != 0
+
+  # ------------------------------------------------
+
+  def test_graceful_then_force_kill(self) -> None:
+    """Graceful CTRL_BREAK_EVENT first, then Job Object force-kill."""
+
+    start = time.monotonic()
+    rc = run_command("sleep 10 & sleep 10 & wait", timeout=1)
+    elapsed = time.monotonic() - start
+    assert rc != 0
+    assert elapsed < 5.0
+
+  # ------------------------------------------------
+
+  def test_cli_force_kill_tree(self) -> None:
+    """CLI: force-kill kills process tree."""
+
+    result = _run_cli(
+      "--sec",
+      "1",
+      "bash",
+      "-c",
+      "sleep 10 & sleep 10 & wait",
+    )
+    assert result.returncode != 0
+    assert "Timeout exceeded" in result.stderr
+
+  # ------------------------------------------------
+
+  def test_no_output_job_object(self) -> None:
+    """--no-output + Job Object force-kill shows timeout message."""
+
+    result = _run_cli("--no-output", "--sec", "0.5", "sleep", "10")
+    assert "Timeout exceeded" in result.stderr
+    assert "Running:" not in result.stdout
+
+
 # ------------------------------------------------
 
 

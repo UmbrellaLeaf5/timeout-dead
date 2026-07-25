@@ -3,6 +3,7 @@
 """Lightweight command timeout utility."""
 
 import argparse
+import ctypes
 import os
 import shutil
 import signal
@@ -10,6 +11,8 @@ import subprocess
 import sys
 import threading
 import time
+from ctypes import byref, sizeof, windll
+from ctypes.wintypes import HANDLE
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _get_version
 
@@ -80,6 +83,79 @@ def _find_bash() -> str:
   return bash_path
 
 
+# MARK: Windows Job Object (process tree force-kill)
+# ------------------------------------------------
+
+
+_JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000
+_JOB_OBJECT_EXTENDED_LIMIT_INFORMATION = 9
+_PROCESS_SET_QUOTA = 0x0100
+_PROCESS_TERMINATE = 0x0001
+
+
+class _JOBOBJECT_EXTENDED_LIMIT_INFORMATION(ctypes.Structure):
+  _fields_ = [
+    ("BasicLimitInformation", ctypes.c_ulonglong * 10),
+    ("IoInfo", ctypes.c_ulonglong * 2),
+    ("ProcessMemoryLimit", ctypes.c_size_t),
+    ("JobMemoryLimit", ctypes.c_size_t),
+    ("PeakProcessMemoryUsed", ctypes.c_size_t),
+    ("PeakJobMemoryUsed", ctypes.c_size_t),
+  ]
+
+
+def _create_kill_on_close_job() -> HANDLE | None:
+  """Create a Windows Job Object that kills processes when the handle is closed."""
+
+  if not _is_windows():
+    return None
+
+  job = windll.kernel32.CreateJobObjectW(None, None)
+
+  if not job:
+    return None
+
+  info = _JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
+  info.BasicLimitInformation[1] = _JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+
+  ok = windll.kernel32.SetInformationJobObject(
+    job,
+    _JOB_OBJECT_EXTENDED_LIMIT_INFORMATION,
+    byref(info),
+    sizeof(info),
+  )
+
+  if not ok:
+    windll.kernel32.CloseHandle(job)
+
+    return None
+
+  return job
+
+
+def _assign_process_to_job(job: HANDLE, pid: int) -> bool:
+  """Assign a process to a Windows Job Object."""
+
+  proc_handle = windll.kernel32.OpenProcess(
+    _PROCESS_SET_QUOTA | _PROCESS_TERMINATE, False, pid
+  )
+
+  if not proc_handle:
+    return False
+
+  ok = windll.kernel32.AssignProcessToJobObject(job, proc_handle)
+  windll.kernel32.CloseHandle(proc_handle)
+
+  return bool(ok)
+
+
+def _close_job(job: HANDLE | None) -> None:
+  """Close a Job Object handle, killing all processes in the job."""
+
+  if job is not None:
+    windll.kernel32.CloseHandle(job)
+
+
 # MARK: Process termination
 # ------------------------------------------------
 
@@ -97,7 +173,13 @@ def _terminate_process(
   try:
     if _is_windows():
       if signal_num is None:
-        process.kill()
+        job_handle = getattr(process, "_job_handle", None)
+
+        if job_handle is not None:
+          _close_job(job_handle)
+
+        else:
+          process.kill()
 
       elif signal_num == signal.SIGINT:
         process.send_signal(signal.SIGINT)
@@ -167,9 +249,12 @@ def run_command(
   signal_num = _Const.SIGNAL_MAP.get(signal_name, signal.SIGTERM)
   process: subprocess.Popen[bytes] | subprocess.Popen[str] | None = None
   timer: threading.Timer | None = None
+  job_handle: HANDLE | None = None
 
   try:
-    creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if _is_windows() else 0
+    creationflags = (
+      getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if _is_windows() else 0
+    )
 
     start_new_session = not _is_windows()
 
@@ -181,6 +266,12 @@ def run_command(
       creationflags=creationflags,
       start_new_session=start_new_session,
     )
+
+    job_handle = _create_kill_on_close_job()
+
+    if job_handle is not None:
+      _assign_process_to_job(job_handle, process.pid)
+      process._job_handle = job_handle  # type: ignore[attr-defined]
 
     timer = threading.Timer(
       timeout,
@@ -216,6 +307,10 @@ def run_command(
     print(f"{_Const.MSG_EXEC_ERROR.format(e)}", file=sys.stderr)
 
     return -1
+
+  finally:
+    if job_handle is not None:
+      _close_job(job_handle)
 
 
 # ------------------------------------------------
