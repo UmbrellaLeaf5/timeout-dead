@@ -71,6 +71,7 @@ def run_command(
 
     stdout, stderr = process.communicate()
     timer.cancel()
+    timer.join()
 
     if not no_output:
       if stdout:
@@ -84,6 +85,7 @@ def run_command(
   except Exception as e:
     if timer:
       timer.cancel()
+      timer.join()
 
     if process and process.poll() is None:
       terminate_process(process)
