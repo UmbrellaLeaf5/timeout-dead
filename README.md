@@ -2,6 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/timeout-dead)](https://pypi.org/project/timeout-dead/)
 [![Python](https://img.shields.io/badge/Python-3.10+-yellow?logo=python)](https://python.org)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-blue)](https://github.com/UmbrellaLeaf5/timeout-dead)
 [![License](https://img.shields.io/badge/license-Unlicense-blue.svg)](LICENSE)
 [![Tests](https://github.com/UmbrellaLeaf5/timeout-dead/actions/workflows/tests.yml/badge.svg)](https://github.com/UmbrellaLeaf5/timeout-dead/actions/workflows/tests.yml)
 [![Ruff](https://github.com/UmbrellaLeaf5/timeout-dead/actions/workflows/ruff.yml/badge.svg)](https://github.com/UmbrellaLeaf5/timeout-dead/actions/workflows/ruff.yml)
@@ -13,7 +14,7 @@
 Runs any shell command with a configurable time limit and termination signal.
 If the command exceeds the timeout, `timeout-dead` sends the chosen signal,
 waits a 1-second grace period, then force-kills the process.
-Works on Linux, macOS, and Windows (Git Bash / WSL).
+Fully cross-platform — Linux, macOS, and Windows (Git Bash / WSL).
 
 ## Installation
 

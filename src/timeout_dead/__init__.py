@@ -1,6 +1,6 @@
 """timeout-dead — lightweight command timeout utility."""
 
-from timeout_dead.cli import main
+from timeout_dead.main import main
 
 
 __all__ = ["main"]

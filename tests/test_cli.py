@@ -1,6 +1,7 @@
 """Tests for timeout-dead CLI utility."""
 
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -10,16 +11,11 @@ from pathlib import Path
 
 import pytest
 
-from timeout_dead.cli import (
-  _Const,
-  _find_bash,
-  _is_windows,
-  main,
-  parse_arguments,
-  print_footer,
-  print_header,
-  run_command,
-)
+from timeout_dead.constants import _Const
+from timeout_dead.main import main, parse_arguments, print_footer, print_header
+from timeout_dead.process import find_bash
+from timeout_dead.runner import run_command
+from timeout_dead.win32 import is_windows
 
 
 # MARK: Helpers
@@ -33,7 +29,7 @@ def _run_cli(
   """Run timeout-dead as a subprocess."""
 
   return subprocess.run(
-    [sys.executable, "-m", "timeout_dead.cli", *args],
+    [sys.executable, "-m", "timeout_dead.main", *args],
     capture_output=True,
     text=True,
     timeout=timeout,
@@ -114,12 +110,12 @@ class TestParseArguments:
 
 class TestPlatform:
   def test_is_windows_type(self) -> None:
-    assert isinstance(_is_windows(), bool)
+    assert isinstance(is_windows(), bool)
 
   # ------------------------------------------------
 
   def test_is_windows_consistent(self) -> None:
-    assert _is_windows() == (os.name == "nt")
+    assert is_windows() == (os.name == "nt")
 
 
 # MARK: Bash detection tests
@@ -128,14 +124,14 @@ class TestPlatform:
 
 class TestBashDetection:
   def test_find_bash_returns_string(self) -> None:
-    bash = _find_bash()
+    bash = find_bash()
     assert isinstance(bash, str)
     assert "bash" in bash.lower()
 
   # ------------------------------------------------
 
   def test_find_bash_exists(self) -> None:
-    bash = _find_bash()
+    bash = find_bash()
     assert os.path.isfile(bash)
 
 
@@ -356,7 +352,7 @@ class TestSignalSelection:
   # ------------------------------------------------
 
   @pytest.mark.skipif(
-    _is_windows(),
+    is_windows(),
     reason="SIGINT file-based test requires Unix signal handling",
   )
   def test_signal_int_handling(self, tmp_path: Path) -> None:
@@ -517,14 +513,21 @@ class TestIntegration:
   def test_cli_version_long(self) -> None:
     result = _run_cli("--version")
     assert result.returncode == 0
-    assert "timeout-dead" in result.stdout
+    assert re.match(r"timeout-dead \d+\.\d+", result.stdout)
 
   # ------------------------------------------------
 
   def test_cli_version_short(self) -> None:
     result = _run_cli("-v")
     assert result.returncode == 0
-    assert "timeout-dead" in result.stdout
+    assert re.match(r"timeout-dead \d+\.\d+", result.stdout)
+
+  # ------------------------------------------------
+
+  def test_cli_version_matches_const(self) -> None:
+    result = _run_cli("--version")
+    version = _Const.PROJECT_VERSION
+    assert result.stdout.strip() == f"timeout-dead {version}"
 
   # ------------------------------------------------
 
@@ -597,3 +600,10 @@ class TestConstants:
 
   def test_header_separator_length(self) -> None:
     assert len(_Const.HEADER_SEPARATOR) == 50
+
+  # ------------------------------------------------
+
+  def test_project_version(self) -> None:
+    version = _Const.PROJECT_VERSION
+    assert isinstance(version, str)
+    assert len(version) > 0

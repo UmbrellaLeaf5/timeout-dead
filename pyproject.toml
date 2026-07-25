@@ -35,9 +35,9 @@ classifiers = [
 dependencies = []
 
 [project.scripts]
-timeout-dead = "timeout_dead.cli:main"
-timeout_dead = "timeout_dead.cli:main"
-time-d = "timeout_dead.cli:main"
+timeout-dead = "timeout_dead.main:main"
+timeout_dead = "timeout_dead.main:main"
+time-d = "timeout_dead.main:main"
 
 [project.urls]
 Repository = "https://github.com/UmbrellaLeaf5/timeout-dead"
