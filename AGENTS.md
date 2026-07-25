@@ -30,10 +30,9 @@ If the user asks "what should the commit message be?" — **suggest a message bu
 
 - "commit"
 - "commit and push"
-- "закоммить"
-- "сделай коммит"
+- "stage and commit"
 
-**If the user says "обнови AGENTS.md" or similar — this is NOT a commit instruction. Do NOT add or commit files unless told to.**
+**If the user says "update AGENTS.md" or similar — this is NOT a commit instruction. Do NOT add or commit files unless told to.**
 
 ## Workflow & Verification Commands
 
@@ -43,7 +42,7 @@ If the user asks "what should the commit message be?" — **suggest a message bu
 uv tool install timeout-dead
 ```
 
-Если уже установлена — убедись что работает:
+If already installed — verify it works:
 
 ```bash
 time-d -h

@@ -558,15 +558,15 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
     time: datetime,
   ) -> CalculationState:
     """
-    Вычисляет и сохраняет состояние для заданной сущности.
+    Calculate and persist the state for the given entity.
 
     Args:
-      entity (OrderEntity): сущность для расчёта
-      item (ItemEntity | None): связанный объект или None, если не назначен
-      time (datetime): момент времени, на который вычисляется состояние
+      entity: the entity to calculate for
+      item: related item, or None if not assigned
+      time: point in time for the calculation
 
     Returns:
-      CalculationState: результирующее состояние
+      CalculationState: resulting calculation state
     """
     ...
   ```
@@ -581,9 +581,9 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
 ### Language of comments
 
 - **Docstring labels** (`Args:`, `Returns:`, `Raises:`) — **exclusively in English** (standard Google style).
-- **Docstring descriptions** — **Russian preferred**. The summary, param descriptions, and return descriptions should be written in Russian.
+- **Docstring descriptions** — **English only**.
 - **`# MARK:` comments** — **exclusively in English**.
-- **Regular `#` comments** — either English or Russian is acceptable, but **Russian is preferred**. Historic English comments may remain, but new or modified comments should use Russian.
+- **Regular `#` comments** — **English only**.
 - **Console output (print, logging)** — English (ASCII only).
 
 ### Inline comments
