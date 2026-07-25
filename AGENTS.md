@@ -37,20 +37,32 @@ If the user asks "what should the commit message be?" — **suggest a message bu
 
 ## Workflow & Verification Commands
 
+### Setup
+
+```bash
+uv tool install timeout-dead
+```
+
+Если уже установлена — убедись что работает:
+
+```bash
+time-d -h
+```
+
 ### Time limit (HARD REQUIREMENT)
 
 **Every bash command MUST complete within 60 seconds.** All commands must be invoked through the timeout wrapper:
 
 ```bash
-timeout-dead --sec 60 "<your command>"
+time-d --sec 60 "<your command>"
 ```
 
 Long-running daemons must use `nohup ... >/dev/null 2>&1 &` so the wrapper returns immediately.
 
-### Setup
+### Install dependencies
 
 ```bash
-timeout-dead --sec 60 "uv sync"
+time-d --sec 60 "uv sync"
 ```
 
 ### Verify after changes
@@ -58,16 +70,16 @@ timeout-dead --sec 60 "uv sync"
 Run **all** checks in this order — treat errors as blockers:
 
 ```bash
-timeout-dead --sec 60 "ruff check ."
-timeout-dead --sec 60 "ruff format --check ."
-timeout-dead --sec 60 "pyright ."
-timeout-dead --sec 60 "python -m pytest tests/ -v"
+time-d --sec 60 "ruff check ."
+time-d --sec 60 "ruff format --check ."
+time-d --sec 60 "pyright ."
+time-d --sec 60 "python -m pytest tests/ -v"
 ```
 
 ### Fix formatting & imports
 
 ```bash
-timeout-dead --sec 60 "ruff check --fix . && ruff format ."
+time-d --sec 60 "ruff check --fix . && ruff format ."
 ```
 
 **LSP is mandatory.** Configure `pyright-langserver` and `ruff server` in your editor. After every change, confirm lint, format, and type-check show **0 errors**. `ruff format` is the single source of truth for formatting — no `black`, no `isort`.
@@ -75,7 +87,7 @@ timeout-dead --sec 60 "ruff check --fix . && ruff format ."
 ### Run a single test
 
 ```bash
-timeout-dead --sec 60 "python -m pytest tests/test_file.py::test_name -v"
+time-d --sec 60 "python -m pytest tests/test_file.py::test_name -v"
 ```
 
 ### Mandatory testing
@@ -170,19 +182,19 @@ class ConflictError(BaseError):
 ### Unit Tests
 
 - Tests live in `tests/` mirroring the source structure.
-- Run unit tests: `timeout-dead --sec 60 "pytest tests/ -v --ignore=tests/integration"`.
+- Run unit tests: `time-d --sec 60 "pytest tests/ -v --ignore=tests/integration"`.
 
 ### Integration Tests
 
 - Place integration tests in `tests/integration/`. Use `@pytest.mark.integration` marker.
-- Run integration tests: `timeout-dead --sec 60 "pytest tests/integration/ -v -m \"integration\""`.
-- Run unit tests only: `timeout-dead --sec 60 "pytest tests/ -v -m \"not integration\""`.
+- Run integration tests: `time-d --sec 60 "pytest tests/integration/ -v -m \"integration\""`.
+- Run unit tests only: `time-d --sec 60 "pytest tests/ -v -m \"not integration\""`.
 
 ### Coverage
 
 - Aim for high coverage of core business logic. Use `pytest-cov` to measure:
   ```bash
-  timeout-dead --sec 60 "pytest tests/ --cov=src/timeout_dead --cov-report=term-missing"
+  time-d --sec 60 "pytest tests/ --cov=src/timeout_dead --cov-report=term-missing"
   ```
 
 ## Environment & Configuration
