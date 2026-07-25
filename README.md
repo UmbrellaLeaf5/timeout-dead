@@ -41,6 +41,9 @@ time-d "echo hello"
 # Specify a custom timeout
 timeout-dead --sec 120 "npm run build"
 
+# Sub-second timeouts work too
+timeout-dead --sec 0.5 "potentially-hanging-tool"
+
 # Use SIGINT instead of default SIGTERM
 timeout-dead --signal INT --sec 30 "long-running-server"
 
@@ -61,7 +64,7 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -v, --version         show version and exit
-  --sec SECONDS         timeout in seconds (default: 60)
+  --sec SECONDS         timeout in seconds (default: 60.0, accepts floats)
   --signal SIGNAL       signal to send on timeout (TERM, KILL, HUP, INT)
   --no-output           suppress normal output (stdout, stderr, header, footer)
 ```

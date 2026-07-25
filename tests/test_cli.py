@@ -48,7 +48,7 @@ def _run_cli(
 class TestParseArguments:
   def test_defaults(self) -> None:
     args = parse_arguments(["echo", "hello"])
-    assert args.sec == 60
+    assert args.sec == 60.0
     assert args.signal == "TERM"
     assert args.no_output is False
     assert args.command == ["echo", "hello"]
@@ -57,7 +57,25 @@ class TestParseArguments:
 
   def test_custom_timeout(self) -> None:
     args = parse_arguments(["--sec", "120", "echo", "hello"])
-    assert args.sec == 120
+    assert args.sec == 120.0
+
+  # ------------------------------------------------
+
+  def test_float_timeout(self) -> None:
+    args = parse_arguments(["--sec", "2.5", "echo", "hello"])
+    assert args.sec == 2.5
+
+  # ------------------------------------------------
+
+  def test_subsecond_timeout(self) -> None:
+    args = parse_arguments(["--sec", "0.3", "sleep", "1"])
+    assert args.sec == 0.3
+
+  # ------------------------------------------------
+
+  def test_zero_timeout(self) -> None:
+    args = parse_arguments(["--sec", "0", "echo", "hello"])
+    assert args.sec == 0.0
 
   # ------------------------------------------------
 
@@ -215,6 +233,58 @@ class TestRunCommand:
     elapsed = time.monotonic() - start
     assert elapsed < 4.0
     assert rc != 0
+
+
+# MARK: Float timeout tests
+# ------------------------------------------------
+
+
+class TestFloatTimeout:
+  def test_float_parsed_correctly(self) -> None:
+    rc = run_command("echo ok", timeout=2.5)
+    assert rc == 0
+
+  # ------------------------------------------------
+
+  def test_subsecond_timeout_triggers(self) -> None:
+    rc = run_command("sleep 10", timeout=0.3)
+    assert rc != 0
+
+  # ------------------------------------------------
+
+  def test_millisecond_timeout(self) -> None:
+    start = time.monotonic()
+    rc = run_command("sleep 10", timeout=0.5)
+    elapsed = time.monotonic() - start
+    assert rc != 0
+    assert elapsed < 4.0
+
+  # ------------------------------------------------
+
+  def test_float_in_message(self, capsys: pytest.CaptureFixture[str]) -> None:
+    run_command("sleep 10", timeout=1.5)
+    captured = capsys.readouterr()
+    assert "Timeout exceeded" in captured.err
+
+  # ------------------------------------------------
+
+  def test_cli_float_arg(self) -> None:
+    result = _run_cli("--sec", "0.3", "sleep", "10")
+    assert result.returncode != 0
+    assert "Timeout exceeded" in result.stderr
+
+  # ------------------------------------------------
+
+  def test_cli_float_with_signal(self) -> None:
+    result = _run_cli("--sec", "0.5", "--signal", "KILL", "sleep", "10")
+    assert result.returncode != 0
+
+  # ------------------------------------------------
+
+  def test_cli_float_no_output(self) -> None:
+    result = _run_cli("--no-output", "--sec", "0.3", "sleep", "10")
+    assert "Timeout exceeded" in result.stderr
+    assert "Running:" not in result.stdout
 
 
 # MARK: Signal selection tests
@@ -460,8 +530,8 @@ class TestIntegration:
 
 class TestConstants:
   def test_default_timeout(self) -> None:
-    assert _Const.DEFAULT_TIMEOUT_S == 60
-    assert isinstance(_Const.DEFAULT_TIMEOUT_S, int)
+    assert _Const.DEFAULT_TIMEOUT_S == 60.0
+    assert isinstance(_Const.DEFAULT_TIMEOUT_S, float)
 
   # ------------------------------------------------
 

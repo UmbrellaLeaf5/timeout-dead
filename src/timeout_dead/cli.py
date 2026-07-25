@@ -19,13 +19,13 @@ from importlib.metadata import version as _get_version
 
 
 class _Const:
-  DEFAULT_TIMEOUT_S: int = 60
+  DEFAULT_TIMEOUT_S: float = 60.0
   GRACE_PERIOD_S: float = 1.0
-  HEADER_SEPARATOR: str = "-" * 60
+  HEADER_SEPARATOR: str = "-" * 50
 
   MSG_NO_COMMAND: str = "Error: no command specified"
   MSG_BASH_NOT_FOUND: str = "bash not found in PATH"
-  MSG_TIMEOUT: str = "Timeout exceeded {} seconds"
+  MSG_TIMEOUT: str = "Timeout exceeded {}s"
   MSG_EXEC_ERROR: str = "Execution error: {}"
 
   SIGNAL_NAMES: tuple[str, ...] = ("TERM", "KILL", "HUP", "INT")
@@ -125,7 +125,7 @@ def _terminate_process(
 
 def _kill_with_timeout(
   process: subprocess.Popen[bytes] | subprocess.Popen[str],
-  timeout: int,
+  timeout: float,
   signal_num: int = signal.SIGTERM,
 ) -> None:
   """Kill the process after timeout with two-stage logic."""
@@ -148,7 +148,7 @@ def _kill_with_timeout(
 
 def run_command(
   command_string: str,
-  timeout: int = _Const.DEFAULT_TIMEOUT_S,
+  timeout: float = _Const.DEFAULT_TIMEOUT_S,
   signal_name: str = "TERM",
   no_output: bool = False,
 ) -> int:
@@ -157,7 +157,7 @@ def run_command(
 
   Args:
     command_string (str): command to execute
-    timeout (int): timeout in seconds
+    timeout (float): timeout in seconds
     signal_name (str): signal name for graceful termination
     no_output (bool): suppress normal output
 
@@ -170,7 +170,10 @@ def run_command(
   timer: threading.Timer | None = None
 
   try:
-    creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if _is_windows() else 0
+    creationflags = (
+      getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if _is_windows() else 0
+    )
+
     start_new_session = not _is_windows()
 
     process = subprocess.Popen(
@@ -236,7 +239,7 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
 
   parser.add_argument(
     "--sec",
-    type=int,
+    type=float,
     default=_Const.DEFAULT_TIMEOUT_S,
     help=f"timeout in seconds (default: {_Const.DEFAULT_TIMEOUT_S})",
     metavar="SECONDS",
@@ -271,7 +274,7 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
 # ------------------------------------------------
 
 
-def print_header(command: str, timeout: int) -> None:
+def print_header(command: str, timeout: float) -> None:
   """Print execution header."""
 
   print(f"Running: {command}")
