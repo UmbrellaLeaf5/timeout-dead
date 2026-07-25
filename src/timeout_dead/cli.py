@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Легковесная утилита для запуска команд с таймаутом."""
+"""Lightweight command timeout utility."""
 
 import argparse
 import os
@@ -24,7 +24,7 @@ class _Const:
   HEADER_SEPARATOR: str = "-" * 60
 
   MSG_NO_COMMAND: str = "Error: no command specified"
-  MSG_BASH_NOT_FOUND: str = "bash not found in PATH — Git Bash is required"
+  MSG_BASH_NOT_FOUND: str = "bash not found in PATH"
   MSG_TIMEOUT: str = "Timeout exceeded {} seconds"
   MSG_EXEC_ERROR: str = "Execution error: {}"
 
@@ -62,13 +62,13 @@ def _is_windows() -> bool:
 
 def _find_bash() -> str:
   """
-  Ищет bash в PATH.
+  Locate bash executable in PATH.
 
   Returns:
-    str: путь к исполняемому файлу bash
+    str: path to the bash executable
 
   Raises:
-    SystemExit: если bash не найден
+    SystemExit: if bash is not found
   """
 
   bash_path = shutil.which("bash")
@@ -90,7 +90,7 @@ def _terminate_process(
   force: bool = False,
   signal_num: int = signal.SIGTERM,
 ) -> None:
-  """Завершает процесс — мягко (выбранным сигналом) или жёстко."""
+  """Terminate the process — gracefully (chosen signal) or forcefully."""
 
   if process.poll() is not None:
     return
@@ -128,7 +128,7 @@ def _kill_with_timeout(
   timeout: int,
   signal_num: int = signal.SIGTERM,
 ) -> None:
-  """Убивает процесс по таймауту с двухэтапной логикой."""
+  """Kill the process after timeout with two-stage logic."""
 
   if process.poll() is not None:
     return
@@ -153,16 +153,16 @@ def run_command(
   no_output: bool = False,
 ) -> int:
   """
-  Запускает команду с таймаутом через bash.
+  Run a command with timeout via bash.
 
   Args:
-    command_string (str): команда для выполнения
-    timeout (int): таймаут в секундах
-    signal_name (str): имя сигнала для мягкого завершения
-    no_output (bool): подавлять ли обычный вывод
+    command_string (str): command to execute
+    timeout (int): timeout in seconds
+    signal_name (str): signal name for graceful termination
+    no_output (bool): suppress normal output
 
   Returns:
-    int: код возврата процесса (-1 при ошибке запуска)
+    int: process return code (-1 on launch error)
   """
 
   signal_num = _Const.SIGNAL_MAP.get(signal_name, signal.SIGTERM)
@@ -170,9 +170,7 @@ def run_command(
   timer: threading.Timer | None = None
 
   try:
-    creationflags = (
-      getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if _is_windows() else 0
-    )
+    creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if _is_windows() else 0
     start_new_session = not _is_windows()
 
     process = subprocess.Popen(
@@ -222,7 +220,7 @@ def run_command(
 
 
 def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
-  """Разбирает аргументы командной строки."""
+  """Parse command-line arguments."""
 
   parser = argparse.ArgumentParser(
     description="Lightweight command timeout utility.",
@@ -274,7 +272,7 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def print_header(command: str, timeout: int) -> None:
-  """Выводит заголовок выполнения."""
+  """Print execution header."""
 
   print(f"Running: {command}")
   print(f"Timeout: {timeout} seconds")
@@ -285,7 +283,7 @@ def print_header(command: str, timeout: int) -> None:
 
 
 def print_footer(return_code: int) -> None:
-  """Выводит футер выполнения."""
+  """Print execution footer."""
 
   print(_Const.HEADER_SEPARATOR)
   print(f"Exit code: {return_code}")
@@ -295,7 +293,7 @@ def print_footer(return_code: int) -> None:
 
 
 def main(argv: list[str] | None = None) -> None:
-  """Главная точка входа."""
+  """Main entry point."""
 
   args = parse_arguments(argv)
 

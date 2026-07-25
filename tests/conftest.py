@@ -9,7 +9,7 @@ import pytest
 
 @pytest.fixture
 def temp_dir() -> Iterator[Path]:
-  """Временная директория для тестов."""
+  """Temporary directory for tests."""
 
   with tempfile.TemporaryDirectory() as tmp:
     yield Path(tmp)

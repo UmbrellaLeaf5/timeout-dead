@@ -1,4 +1,4 @@
-"""Тесты CLI утилиты timeout-dead."""
+"""Tests for timeout-dead CLI utility."""
 
 import os
 import signal
@@ -30,7 +30,7 @@ def _run_cli(
   *args: str,
   timeout: int = 10,
 ) -> subprocess.CompletedProcess[str]:
-  """Запускает timeout-dead как subprocess."""
+  """Run timeout-dead as a subprocess."""
 
   return subprocess.run(
     [sys.executable, "-m", "timeout_dead.cli", *args],
@@ -245,7 +245,7 @@ class TestSignalSelection:
     reason="SIGINT file-based test requires Unix signal handling",
   )
   def test_signal_int_handling(self, tmp_path: Path) -> None:
-    """Python-скрипт ловит SIGINT и записывает номер сигнала в файл."""
+    """Python script catches SIGINT and writes signal number to file."""
 
     marker = tmp_path / "signal.txt"
     script_path = tmp_path / "handler.py"
