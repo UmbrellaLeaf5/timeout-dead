@@ -87,17 +87,16 @@ def _find_bash() -> str:
 def _terminate_process(
   process: subprocess.Popen[bytes] | subprocess.Popen[str],
   *,
-  force: bool = False,
-  signal_num: int = signal.SIGTERM,
+  signal_num: int | None = None,
 ) -> None:
-  """Terminate the process — gracefully (chosen signal) or forcefully."""
+  """Terminate the process. signal_num=None means force-kill (SIGKILL)."""
 
   if process.poll() is not None:
     return
 
   try:
     if _is_windows():
-      if force:
+      if signal_num is None:
         process.kill()
 
       elif signal_num == signal.SIGINT:
@@ -110,7 +109,7 @@ def _terminate_process(
     else:
       pgid = os.getpgid(process.pid)  # pyright: ignore[reportAttributeAccessIssue]
 
-      if force:
+      if signal_num is None:
         os.killpg(pgid, signal.SIGKILL)  # pyright: ignore[reportAttributeAccessIssue]
 
       else:
@@ -137,7 +136,7 @@ def _kill_with_timeout(
   time.sleep(_Const.GRACE_PERIOD_S)
 
   if process.poll() is None:
-    _terminate_process(process, force=True)
+    _terminate_process(process)
 
   print(f"\n{_Const.MSG_TIMEOUT.format(timeout)}", file=sys.stderr)
 
@@ -170,9 +169,7 @@ def run_command(
   timer: threading.Timer | None = None
 
   try:
-    creationflags = (
-      getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if _is_windows() else 0
-    )
+    creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if _is_windows() else 0
 
     start_new_session = not _is_windows()
 
@@ -190,6 +187,7 @@ def run_command(
       _kill_with_timeout,
       args=(process, timeout, signal_num),
     )
+
     timer.start()
 
     stdout, stderr = process.communicate()
@@ -198,6 +196,7 @@ def run_command(
     if not no_output:
       if stdout:
         print(stdout, end="")
+
       if stderr:
         print(stderr, end="", file=sys.stderr)
 
@@ -209,7 +208,7 @@ def run_command(
 
     if process and process.poll() is None:
       try:
-        _terminate_process(process, force=True)
+        _terminate_process(process)
 
       except Exception:
         pass
