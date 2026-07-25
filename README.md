@@ -147,4 +147,4 @@ uv run pyright src/timeout_dead/
 
 [Unlicense](LICENSE) — public domain.
 
-<a href="https://www.flaticon.com/free-icons/timeout" title="timeout icons">Timeout icons created by Those Icons - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/timeout" title="timeout icons">Timeout icons created by pocike - Flaticon</a>
