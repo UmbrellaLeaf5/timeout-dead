@@ -80,6 +80,19 @@ options:
    - After 1 second, if the process is still running, `SIGKILL` (Unix) or `process.kill()` (Windows) is sent.
    - A `Timeout exceeded` message is printed to stderr.
 
+## Cross-platform
+
+Zero code changes between platforms. `timeout-dead` detects the OS at startup and
+uses the native termination strategy:
+
+| OS      | Process isolation           | Graceful signal    | Force kill                 |
+| ------- | --------------------------- | ------------------ | -------------------------- |
+| Linux   | `setsid()` process group    | `SIGTERM`          | `SIGKILL` via `killpg()`   |
+| macOS   | `setsid()` process group    | `SIGTERM`          | `SIGKILL` via `killpg()`   |
+| Windows | Job Object (`kernel32.dll`) | `CTRL_BREAK_EVENT` | `CloseHandle()` kills tree |
+
+Tested on all three platforms in CI.
+
 ## Signal reference
 
 | Signal | Unix                                  | Windows                            |
