@@ -78,12 +78,41 @@ options:
 
 ## Signal reference
 
-| Signal | Unix | Windows |
-|--------|------|---------|
+| Signal | Unix                                  | Windows                            |
+| ------ | ------------------------------------- | ---------------------------------- |
 | `TERM` | `SIGTERM` (15) — terminate gracefully | `CTRL_BREAK_EVENT` — console break |
-| `KILL` | `SIGKILL` (9) — force kill | Falls back to `TerminateProcess` |
-| `HUP`  | `SIGHUP` (1) — hangup | Falls back to `TerminateProcess` |
-| `INT`  | `SIGINT` (2) — interrupt (Ctrl+C) | `CTRL_C_EVENT` — console interrupt |
+| `KILL` | `SIGKILL` (9) — force kill            | Falls back to `TerminateProcess`   |
+| `HUP`  | `SIGHUP` (1) — hangup                 | Falls back to `TerminateProcess`   |
+| `INT`  | `SIGINT` (2) — interrupt (Ctrl+C)     | `CTRL_C_EVENT` — console interrupt |
+
+## Why `subprocess` timeout is not enough
+
+Python's built-in `subprocess` timeout only kills the direct child, not its entire process tree. If your command spawns subprocesses (`npm install`, `make`, `docker build`), children survive the parent kill.
+
+`timeout-dead` uses **process groups** to terminate everything — every subprocess, pipeline, and child.
+
+## Real-world scenarios
+
+| Scenario         | Command                   | Why it hangs                                            | `timeout-dead`                                           |
+| ---------------- | ------------------------- | ------------------------------------------------------- | -------------------------------------------------------- |
+| Gradle build     | `./gradlew build`         | 20+ min fresh build, agent generates duplicate commands | `timeout-dead --sec 600 "./gradlew build"`               |
+| CMake build      | `cmake --build .`         | Locks waiting for dependency resolution                 | `timeout-dead --sec 180 "cmake --build ."`               |
+| Spring Boot      | `./gradlew bootRun`       | Server never exits, agent won't proceed                 | `timeout-dead --sec 30 --signal INT "./gradlew bootRun"` |
+| Docker build     | `docker build -t myapp .` | Network timeout, internal retries, no progress          | `timeout-dead --sec 600 "docker build -t myapp ."`       |
+| npm install      | `npm install`             | Corrupted cache or registry auth hang                   | `timeout-dead --sec 300 "npm install"`                   |
+| Interactive REPL | `python` / `node` / `irb` | Waits for input, agent doesn't know                     | `timeout-dead --sec 5 "python"`                          |
+
+## For AI agents
+
+If you build agents that execute shell commands, `timeout-dead` is essential infrastructure. Agents frequently generate commands that hang — waiting for input, entering infinite loops, or starting interactive programs.
+
+Instead of agents freezing indefinitely, wrap every command:
+
+```bash
+timeout-dead --sec <timeout> --signal <signal> "<command>"
+```
+
+No dependencies, no code changes. Agent always gets a response — exit code + output — and can implement retry, fallback, or user notification.
 
 ## Development
 
