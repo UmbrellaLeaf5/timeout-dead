@@ -15,7 +15,6 @@ from timeout_dead.constants import _Const
 from timeout_dead.main import main, parse_arguments, print_footer, print_header
 from timeout_dead.process import find_bash
 from timeout_dead.runner import run_command
-from timeout_dead.win32 import is_windows
 
 
 # MARK: Helpers
@@ -110,12 +109,12 @@ class TestParseArguments:
 
 class TestPlatform:
   def test_is_windows_type(self) -> None:
-    assert isinstance(is_windows(), bool)
+    assert isinstance(_Const.IS_WINDOWS, bool)
 
   # ------------------------------------------------
 
   def test_is_windows_consistent(self) -> None:
-    assert is_windows() == (os.name == "nt")
+    assert _Const.IS_WINDOWS == (os.name == "nt")
 
 
 # MARK: Bash detection tests
@@ -352,7 +351,7 @@ class TestSignalSelection:
   # ------------------------------------------------
 
   @pytest.mark.skipif(
-    is_windows(),
+    _Const.IS_WINDOWS,
     reason="SIGINT file-based test requires Unix signal handling",
   )
   def test_signal_int_handling(self, tmp_path: Path) -> None:

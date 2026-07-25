@@ -1,5 +1,7 @@
 """Constants and configuration for timeout-dead."""
 
+import ctypes
+import os
 import signal
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _get_version
@@ -29,6 +31,11 @@ class _Const:
     "HUP": getattr(signal, "SIGHUP", signal.SIGTERM),
     "INT": signal.SIGINT,
   }
+
+  # Platform
+  IS_WINDOWS: bool = os.name == "nt"
+  _WINDLL = getattr(ctypes, "windll", None)
+  KERNEL32 = _WINDLL.kernel32 if _WINDLL is not None else None
 
   # Windows Job Object
   JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE: int = 0x00002000

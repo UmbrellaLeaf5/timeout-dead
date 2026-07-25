@@ -9,7 +9,7 @@ import time
 from ctypes.wintypes import HANDLE
 
 from timeout_dead.constants import _Const
-from timeout_dead.win32 import close_job, is_windows
+from timeout_dead.win32 import close_job
 
 
 # MARK: Bash detection
@@ -51,7 +51,7 @@ def terminate_process(
     return
 
   try:
-    if is_windows():
+    if _Const.IS_WINDOWS:
       if signal_num is None:
         job_handle: HANDLE | None = getattr(process, "_job_handle", None)
 

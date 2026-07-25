@@ -12,7 +12,6 @@ from timeout_dead.win32 import (
   assign_process_to_job,
   close_job,
   create_kill_on_close_job,
-  is_windows,
 )
 
 
@@ -45,9 +44,7 @@ def run_command(
   job_handle: HANDLE | None = None
 
   try:
-    creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if is_windows() else 0
-
-    start_new_session = not is_windows()
+    creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if _Const.IS_WINDOWS else 0
 
     process = subprocess.Popen(
       [find_bash(), "-c", command_string],
@@ -55,7 +52,7 @@ def run_command(
       stderr=subprocess.PIPE,
       text=True,
       creationflags=creationflags,
-      start_new_session=start_new_session,
+      start_new_session=(not _Const.IS_WINDOWS),
     )
 
     job_handle = create_kill_on_close_job()

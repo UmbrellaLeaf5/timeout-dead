@@ -2,6 +2,7 @@
   "cSpell.words": [
     "creationflags",
     "getpgid",
+    "JOBOBJECT",
     "killpg",
     "pgid"
   ]
