@@ -70,7 +70,7 @@ def print_header(command: str, timeout: float) -> None:
 
   print(f"Running: {command}")
   print(f"Timeout: {timeout} seconds")
-  print(_Const.HEADER_SEPARATOR)
+  print(_Const.SEPARATOR)
 
 
 # ------------------------------------------------
@@ -79,7 +79,7 @@ def print_header(command: str, timeout: float) -> None:
 def print_footer(return_code: int) -> None:
   """Print execution footer."""
 
-  print(_Const.HEADER_SEPARATOR)
+  print(_Const.SEPARATOR)
   print(f"Exit code: {return_code}")
 
 

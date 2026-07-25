@@ -248,9 +248,8 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
 - Use blank lines to separate logical sections of code. Avoid excessive blank lines that create visual noise.
 
 - **2 blank lines** between top-level definitions (functions, classes).
+- **1 blank line** between member methods inside a class.
 - **2 blank lines** after the last import.
-
-- **Important:** Blank line rules may overlap. When multiple rules require a blank line at the same position, use exactly **one blank line**. Never use two or more consecutive blank lines.
 
   Blank line **needed** — when switching between different variables / logical groups:
 
@@ -281,11 +280,15 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
 
   No naked blank lines between peer-level definitions — always use a separator or MARK.
 
+  **Top-level definitions** — 2 blank lines before and after the separator:
+
   ```python
   def compute_full(request: CalculationRequest) -> CalculationPlan | None:
     ...
 
+
   # ------------------------------------------------
+
 
   def _compute_new_plan(
     request: CalculationRequest,
@@ -296,6 +299,7 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
   # MARK: Time-to-interaction calculation
   # ------------------------------------------------
 
+
   def _calculate_interaction_time(
     item: ItemState,
     target: TargetState,
@@ -304,48 +308,32 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
     ...
   ```
 
+  **Member methods inside a class** — 1 blank line before and after the separator:
+
   ```python
-  # MARK: Calculation helpers
-  # ------------------------------------------------
+  class Calculator:
+    def calculate_time(...) -> float:
+      ...
 
-  def calculate_time(...) -> float:
-    ...
+    # ------------------------------------------------
 
-  # ------------------------------------------------
+    def calculate_point(...) -> Point:
+      ...
 
-  def calculate_point(...) -> Point:
-    ...
+    # ------------------------------------------------
 
-  # ------------------------------------------------
-
-  def validate_calculation(...) -> None:
-    ...
+    def validate_calculation(...) -> None:
+      ...
   ```
+
+- After a closing `# ------------------------------------------------` or `# MARK:` section header:
+  - **2 blank lines** before the next top-level statement
+  - **1 blank line** before the next member method
 
   ```python
   # MARK: Private Helpers
   # ------------------------------------------------
 
-  def _build_response(...) -> Response:
-    ...
-
-  # ------------------------------------------------
-
-  def _validate_input(...) -> None:
-    ...
-
-  # MARK: Complex calculation algorithm
-  # ------------------------------------------------
-
-  def _calculate_matrix(...) -> Matrix:
-    ...
-  ```
-
-- After a closing `# ------------------------------------------------` or `# MARK:` section header — a blank line before the next statement.
-
-  ```python
-  # MARK: Private Helpers
-  # ------------------------------------------------
 
   def _build_response(...) -> Response:
     ...

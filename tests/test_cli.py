@@ -131,7 +131,7 @@ class TestBashDetection:
 
   def test_find_bash_exists(self) -> None:
     bash = find_bash()
-    assert os.path.isfile(bash)
+    assert Path(bash).is_file()
 
 
 # MARK: run_command tests
@@ -598,7 +598,7 @@ class TestConstants:
   # ------------------------------------------------
 
   def test_header_separator_length(self) -> None:
-    assert len(_Const.HEADER_SEPARATOR) == 50
+    assert len(_Const.SEPARATOR) == 50
 
   # ------------------------------------------------
 

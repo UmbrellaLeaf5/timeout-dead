@@ -40,6 +40,9 @@ def create_kill_on_close_job() -> HANDLE | None:
   return job
 
 
+# ------------------------------------------------
+
+
 def assign_process_to_job(job: HANDLE, pid: int) -> bool:
   """Assign a process to a Windows Job Object."""
 
@@ -56,6 +59,9 @@ def assign_process_to_job(job: HANDLE, pid: int) -> bool:
   _Const.KERNEL32.CloseHandle(proc_handle)
 
   return bool(ok)
+
+
+# ------------------------------------------------
 
 
 def close_job(job: HANDLE | None) -> None:

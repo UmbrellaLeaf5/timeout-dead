@@ -14,14 +14,26 @@ from importlib.metadata import version as _get_version
 class _Const:
   DEFAULT_TIMEOUT_S: float = 60.0
   GRACE_PERIOD_S: float = 1.0
-  HEADER_SEPARATOR: str = "-" * 50
+  SEPARATOR: str = "-" * 50
 
   MSG_NO_COMMAND: str = "Error: no command specified"
   MSG_BASH_NOT_FOUND: str = "bash not found in PATH"
-  MSG_TIMEOUT: str = "Timeout exceeded {}s"
-  MSG_EXEC_ERROR: str = "Execution error: {}"
-  MSG_PROCESS_NOT_FOUND: str = "Process already gone (pid {}), nothing to terminate"
-  MSG_TERMINATE_FAILED: str = "Failed to terminate process pid {}: {}"
+
+  @staticmethod
+  def msg_timeout(timeout_s: float) -> str:
+    return f"Timeout exceeded {timeout_s}s"
+
+  @staticmethod
+  def msg_exec_error(error: object) -> str:
+    return f"Execution error: {error}"
+
+  @staticmethod
+  def msg_process_not_found(pid: int) -> str:
+    return f"Process already gone (pid {pid}), nothing to terminate"
+
+  @staticmethod
+  def msg_terminate_failed(pid: int, exc: Exception) -> str:
+    return f"Failed to terminate process pid {pid}: {exc}"
 
   SIGNAL_NAMES: tuple[str, ...] = ("TERM", "KILL", "HUP", "INT")
 

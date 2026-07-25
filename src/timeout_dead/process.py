@@ -79,13 +79,13 @@ def terminate_process(
 
   except ProcessLookupError:
     print(
-      f"\n{_Const.MSG_PROCESS_NOT_FOUND.format(process.pid)}",
+      f"\n{_Const.msg_process_not_found(process.pid)}",
       file=sys.stderr,
     )
 
   except OSError as exc:
     print(
-      f"\n{_Const.MSG_TERMINATE_FAILED.format(process.pid, exc)}",
+      f"\n{_Const.msg_terminate_failed(process.pid, exc)}",
       file=sys.stderr,
     )
 
@@ -109,4 +109,4 @@ def kill_with_timeout(
   if process.poll() is None:
     terminate_process(process)
 
-  print(f"\n{_Const.MSG_TIMEOUT.format(timeout)}", file=sys.stderr)
+  print(f"\n{_Const.msg_timeout(timeout)}", file=sys.stderr)

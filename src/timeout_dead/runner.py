@@ -90,7 +90,7 @@ def run_command(
     if process and process.poll() is None:
       terminate_process(process)
 
-    print(f"{_Const.MSG_EXEC_ERROR.format(e)}", file=sys.stderr)
+    print(f"{_Const.msg_exec_error(e)}", file=sys.stderr)
 
     return -1
 
