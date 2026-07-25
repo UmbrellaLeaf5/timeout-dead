@@ -10,6 +10,8 @@ import subprocess
 import sys
 import threading
 import time
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _get_version
 
 
 # MARK: Constants
@@ -34,6 +36,17 @@ class _Const:
     "HUP": getattr(signal, "SIGHUP", signal.SIGTERM),
     "INT": signal.SIGINT,
   }
+
+  @staticmethod
+  def _resolve_version() -> str:
+    try:
+      return _get_version("timeout-dead")
+
+    except PackageNotFoundError:
+      return "unknown"
+
+
+_PROJECT_VERSION: str = _Const._resolve_version()
 
 
 # MARK: Private Helpers
@@ -157,7 +170,9 @@ def run_command(
   timer: threading.Timer | None = None
 
   try:
-    creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if _is_windows() else 0
+    creationflags = (
+      getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if _is_windows() else 0
+    )
     start_new_session = not _is_windows()
 
     process = subprocess.Popen(
@@ -190,6 +205,7 @@ def run_command(
   except Exception as e:
     if timer:
       timer.cancel()
+
     if process and process.poll() is None:
       try:
         _terminate_process(process, force=True)
@@ -211,6 +227,13 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
   parser = argparse.ArgumentParser(
     description="Lightweight command timeout utility.",
     formatter_class=argparse.RawDescriptionHelpFormatter,
+  )
+
+  parser.add_argument(
+    "-v",
+    "--version",
+    action="version",
+    version=f"timeout-dead {_PROJECT_VERSION}",
   )
 
   parser.add_argument(

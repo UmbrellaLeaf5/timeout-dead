@@ -51,7 +51,7 @@ timeout-dead --no-output "curl -s https://example.com"
 ## Usage
 
 ```
-usage: timeout-dead [-h] [--sec SECONDS] [--signal SIGNAL] [--no-output] COMMAND ...
+usage: timeout-dead [-h] [-v] [--sec SECONDS] [--signal SIGNAL] [--no-output] COMMAND ...
 
 Lightweight command timeout utility.
 
@@ -60,6 +60,7 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
+  -v, --version         show version and exit
   --sec SECONDS         timeout in seconds (default: 60)
   --signal SIGNAL       signal to send on timeout (TERM, KILL, HUP, INT)
   --no-output           suppress normal output (stdout, stderr, header, footer)

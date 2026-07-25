@@ -395,6 +395,21 @@ class TestIntegration:
     assert "--sec" in result.stdout
     assert "--signal" in result.stdout
     assert "--no-output" in result.stdout
+    assert "--version" in result.stdout
+
+  # ------------------------------------------------
+
+  def test_cli_version_long(self) -> None:
+    result = _run_cli("--version")
+    assert result.returncode == 0
+    assert "timeout-dead" in result.stdout
+
+  # ------------------------------------------------
+
+  def test_cli_version_short(self) -> None:
+    result = _run_cli("-v")
+    assert result.returncode == 0
+    assert "timeout-dead" in result.stdout
 
   # ------------------------------------------------
 
