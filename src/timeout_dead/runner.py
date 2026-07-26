@@ -28,7 +28,7 @@ def _is_console_handle(fd: int) -> bool:
   try:
     import msvcrt  # noqa: PLC0415  — Windows-only, imported lazily
 
-    handle = msvcrt.get_osfhandle(fd)
+    handle = msvcrt.get_osfhandle(fd)  # pyright: ignore[reportAttributeAccessIssue]
     mode = ctypes.c_uint32()
     get_console_mode = getattr(_Const.KERNEL32, "GetConsoleMode", None)
 
@@ -116,7 +116,7 @@ def run_command(
 
       else:
         try:
-          con_in_fd = os.open("CONIN$", os.O_RDONLY | os.O_BINARY)
+          con_in_fd = os.open("CONIN$", os.O_RDONLY | getattr(os, "O_BINARY", 0))
           stdin = con_in_fd
 
         except OSError:
