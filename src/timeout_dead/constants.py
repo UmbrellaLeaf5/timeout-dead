@@ -24,13 +24,19 @@ class _Const:
   def msg_timeout(timeout_s: float) -> str:
     return f"Timeout exceeded {timeout_s}s"
 
+  # ------------------------------------------------
+
   @staticmethod
   def msg_exec_error(error: object) -> str:
     return f"Execution error: {error}"
 
+  # ------------------------------------------------
+
   @staticmethod
   def msg_process_not_found(pid: int) -> str:
     return f"Process already gone (pid {pid}), nothing to terminate"
+
+  # ------------------------------------------------
 
   @staticmethod
   def msg_terminate_failed(pid: int, exc: Exception) -> str:

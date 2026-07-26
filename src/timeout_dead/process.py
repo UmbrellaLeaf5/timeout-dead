@@ -36,6 +36,25 @@ def find_bash() -> str:
   return bash_path
 
 
+# MARK: Helpers
+# ------------------------------------------------
+
+
+def _taskkill_tree(pid: int) -> None:
+  """Kill *pid* and all its descendants via taskkill (Windows)."""
+
+  try:
+    subprocess.run(
+      ["taskkill", "/T", "/F", "/PID", str(pid)],
+      capture_output=True,
+      check=False,
+      timeout=5,
+    )
+
+  except (OSError, subprocess.TimeoutExpired):
+    pass
+
+
 # MARK: Process termination
 # ------------------------------------------------
 
@@ -53,24 +72,31 @@ def terminate_process(
   try:
     if _Const.IS_WINDOWS:
       if signal_num is None:
+        # Kill the whole tree FIRST, while bash is still alive, so /T can
+        # enumerate and kill children that escaped the Job Object (race
+        # between Popen and AssignProcessToJobObject).
+        _taskkill_tree(process.pid)
+
         job_handle: HANDLE | None = getattr(process, "_job_handle", None)
 
         if job_handle is not None:
           close_job(job_handle)
           process._job_handle = None  # type: ignore[attr-defined]
 
-          return
+        # Kill the main process directly (belt).
+        try:
+          process.kill()
 
-        process.kill()
+        except OSError:
+          pass
 
         return
 
       elif signal_num == signal.SIGINT:
-        process.send_signal(signal.SIGINT)
+        process.send_signal(getattr(signal, "CTRL_C_EVENT", signal.SIGINT))
 
       else:
-        ctrl_break = getattr(signal, "CTRL_BREAK_EVENT", signal.SIGTERM)
-        process.send_signal(ctrl_break)
+        process.send_signal(getattr(signal, "CTRL_BREAK_EVENT", signal.SIGTERM))
 
     else:
       pgid = os.getpgid(process.pid)  # pyright: ignore[reportAttributeAccessIssue]

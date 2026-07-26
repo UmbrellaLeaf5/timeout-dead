@@ -85,6 +85,7 @@ def main(argv: list[str] | None = None) -> None:
     print(f"Timeout: {args.sec} seconds")
 
     print(_Const.SEPARATOR)
+    sys.stdout.flush()
 
   return_code = run_command(
     command_string,
@@ -95,8 +96,10 @@ def main(argv: list[str] | None = None) -> None:
 
   if not args.no_output:
     print(_Const.SEPARATOR)
+    sys.stdout.flush()
 
     print(f"Exit code: {return_code}\n")
+    sys.stdout.flush()
 
   sys.exit(return_code)
 

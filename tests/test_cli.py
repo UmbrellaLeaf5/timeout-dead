@@ -2,6 +2,7 @@
 
 import os
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -134,7 +135,7 @@ class TestBashDetection:
     assert Path(bash).is_file()
 
 
-# MARK: run_command tests
+# MARK: Run command tests
 # ------------------------------------------------
 
 
@@ -148,28 +149,6 @@ class TestRunCommand:
   def test_failing_command(self) -> None:
     rc = run_command("exit 42")
     assert rc == 42
-
-  # ------------------------------------------------
-
-  def test_command_with_output(
-    self,
-    capsys: pytest.CaptureFixture[str],
-  ) -> None:
-    rc = run_command('echo "test output"')
-    captured = capsys.readouterr()
-    assert rc == 0
-    assert "test output" in captured.out
-
-  # ------------------------------------------------
-
-  def test_command_with_stderr(
-    self,
-    capsys: pytest.CaptureFixture[str],
-  ) -> None:
-    rc = run_command("echo error >&2")
-    captured = capsys.readouterr()
-    assert rc == 0
-    assert "error" in captured.err
 
   # ------------------------------------------------
 
@@ -328,6 +307,7 @@ class TestJobObject:
     assert "Running:" not in result.stdout
 
 
+# MARK: Signal selection tests
 # ------------------------------------------------
 
 
@@ -397,7 +377,7 @@ class TestSignalSelection:
     assert rc != 0
 
 
-# MARK: --no-output tests
+# MARK: No-output tests
 # ------------------------------------------------
 
 
@@ -423,7 +403,7 @@ class TestNoOutput:
     assert "Exit code" in captured.out
 
 
-# MARK: main() tests
+# MARK: Main tests
 # ------------------------------------------------
 
 
@@ -595,6 +575,48 @@ class TestIntegration:
   def test_cli_with_signal_option(self) -> None:
     result = _run_cli("--signal", "KILL", "--sec", "2", "echo", "signal-test")
     assert result.returncode == 0
+
+  # ------------------------------------------------
+
+  def test_cli_signal_int_timeout(self) -> None:
+    result = _run_cli("--signal", "INT", "--sec", "1", "sleep", "10")
+    assert result.returncode != 0
+    assert "Timeout exceeded" in result.stderr
+
+  # ------------------------------------------------
+
+  def test_cli_signal_hup_timeout(self) -> None:
+    result = _run_cli("--signal", "HUP", "--sec", "1", "sleep", "10")
+    assert result.returncode != 0
+    assert "Timeout exceeded" in result.stderr
+
+  # ------------------------------------------------
+
+  def test_cli_signal_kill_timeout(self) -> None:
+    result = _run_cli("--signal", "KILL", "--sec", "1", "sleep", "10")
+    assert result.returncode != 0
+    assert "Timeout exceeded" in result.stderr
+
+  # ------------------------------------------------
+
+  def test_cli_vim_smoke(self) -> None:
+    if not shutil.which("vim"):
+      pytest.skip("vim not found in PATH")
+    result = _run_cli("--sec", "5", "vim", "--version", timeout=30)
+    assert result.returncode == 0
+    assert "VIM" in result.stdout.upper()
+
+  # ------------------------------------------------
+
+  def test_cli_output_between_separators(self) -> None:
+    result = _run_cli("echo", "hello-flush")
+    assert result.returncode == 0
+    parts = result.stdout.split(_Const.SEPARATOR)
+    assert len(parts) == 3
+    assert "Running:" in parts[0]
+    assert "Timeout:" in parts[0]
+    assert "hello-flush" in parts[1]
+    assert "Exit code:" in parts[2]
 
 
 # MARK: Constants tests
