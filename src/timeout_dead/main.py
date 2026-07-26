@@ -32,7 +32,7 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     "--sec",
     type=float,
     default=_Const.DEFAULT_TIMEOUT_S,
-    help=f"timeout in seconds (default: {_Const.DEFAULT_TIMEOUT_S})",
+    help=f"timeout in seconds (default: {_Const.DEFAULT_TIMEOUT_S}, must be > 0)",
     metavar="SECONDS",
   )
 
@@ -49,7 +49,7 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     "--no-output",
     action="store_true",
     default=False,
-    help="suppress normal output (stdout, stderr, header, footer)",
+    help="suppress normal output (stdout, stderr)",
   )
 
   parser.add_argument(
@@ -65,27 +65,6 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
 # ------------------------------------------------
 
 
-def print_header(command: str, timeout: float) -> None:
-  """Print execution header."""
-
-  print(f"Running: {command}")
-  print(f"Timeout: {timeout} seconds")
-  print(_Const.SEPARATOR)
-
-
-# ------------------------------------------------
-
-
-def print_footer(return_code: int) -> None:
-  """Print execution footer."""
-
-  print(_Const.SEPARATOR)
-  print(f"Exit code: {return_code}")
-
-
-# ------------------------------------------------
-
-
 def main(argv: list[str] | None = None) -> None:
   """Main entry point."""
 
@@ -95,10 +74,17 @@ def main(argv: list[str] | None = None) -> None:
     print(f"{_Const.MSG_NO_COMMAND}", file=sys.stderr)
     sys.exit(1)
 
+  if args.sec <= 0:
+    print(_Const.MSG_TIMEOUT_POSITIVE, file=sys.stderr)
+    sys.exit(1)
+
   command_string = " ".join(args.command)
 
   if not args.no_output:
-    print_header(command_string, args.sec)
+    print(f"Running: {command_string}")
+    print(f"Timeout: {args.sec} seconds")
+
+    print(_Const.SEPARATOR)
 
   return_code = run_command(
     command_string,
@@ -108,7 +94,9 @@ def main(argv: list[str] | None = None) -> None:
   )
 
   if not args.no_output:
-    print_footer(return_code)
+    print(_Const.SEPARATOR)
+
+    print(f"Exit code: {return_code}\n")
 
   sys.exit(return_code)
 

@@ -57,9 +57,13 @@ def terminate_process(
 
         if job_handle is not None:
           close_job(job_handle)
+          process._job_handle = None  # type: ignore[attr-defined]
 
-        else:
-          process.kill()
+          return
+
+        process.kill()
+
+        return
 
       elif signal_num == signal.SIGINT:
         process.send_signal(signal.SIGINT)

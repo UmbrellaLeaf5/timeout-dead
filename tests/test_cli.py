@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from timeout_dead.constants import _Const
-from timeout_dead.main import main, parse_arguments, print_footer, print_header
+from timeout_dead.main import main, parse_arguments
 from timeout_dead.process import find_bash
 from timeout_dead.runner import run_command
 
@@ -406,7 +406,8 @@ class TestNoOutput:
     self,
     capsys: pytest.CaptureFixture[str],
   ) -> None:
-    print_header("test cmd", 60)
+    with pytest.raises(SystemExit):
+      main(["echo", "hello"])
     captured = capsys.readouterr()
     assert "Running:" in captured.out
 
@@ -416,7 +417,8 @@ class TestNoOutput:
     self,
     capsys: pytest.CaptureFixture[str],
   ) -> None:
-    print_footer(0)
+    with pytest.raises(SystemExit):
+      main(["echo", "hello"])
     captured = capsys.readouterr()
     assert "Exit code" in captured.out
 
@@ -491,6 +493,30 @@ class TestMain:
     captured = capsys.readouterr()
     assert exc_info.value.code == 0
     assert "ok" in captured.out
+
+  # ------------------------------------------------
+
+  def test_main_zero_timeout_exits_with_error(
+    self,
+    capsys: pytest.CaptureFixture[str],
+  ) -> None:
+    with pytest.raises(SystemExit) as exc_info:
+      main(["--sec", "0", "echo", "hello"])
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 1
+    assert _Const.MSG_TIMEOUT_POSITIVE in captured.err
+
+  # ------------------------------------------------
+
+  def test_main_negative_timeout_exits_with_error(
+    self,
+    capsys: pytest.CaptureFixture[str],
+  ) -> None:
+    with pytest.raises(SystemExit) as exc_info:
+      main(["--sec", "-5", "echo", "hello"])
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 1
+    assert _Const.MSG_TIMEOUT_POSITIVE in captured.err
 
 
 # MARK: Integration tests (subprocess)

@@ -67,7 +67,7 @@ options:
   -v, --version         show version and exit
   --sec SECONDS         timeout in seconds (default: 60.0, accepts floats)
   --signal SIGNAL       signal to send on timeout (TERM, KILL, HUP, INT)
-  --no-output           suppress normal output (stdout, stderr, header, footer)
+  --no-output           suppress normal output (stdout, stderr)
 ```
 
 ## How it works
@@ -79,6 +79,10 @@ options:
    - The chosen signal is sent to the process group.
    - After 1 second, if the process is still running, `SIGKILL` (Unix) or `process.kill()` (Windows) is sent.
    - A `Timeout exceeded` message is printed to stderr.
+
+> **Windows signal note:** On Windows, `CTRL_BREAK_EVENT` (used for `TERM` and `HUP`) is sent to the main process only — child processes may not receive it. They will be force-killed after the 1-second grace period. For critical cleanup, use `KILL` or ensure the parent handles cleanup.
+
+> **Process group note:** Processes that explicitly detach from their process group (e.g., via `setsid` or `nohup`) may not be terminated. Even `KILL` may not reach processes that have created a new session.
 
 ## Cross-platform
 
@@ -118,6 +122,7 @@ Python's built-in `subprocess` timeout only kills the direct child, not its enti
 | Docker build     | `docker build -t myapp .` | Network timeout, internal retries, no progress          | `timeout-dead --sec 600 "docker build -t myapp ."`       |
 | npm install      | `npm install`             | Corrupted cache or registry auth hang                   | `timeout-dead --sec 300 "npm install"`                   |
 | Interactive REPL | `python` / `node` / `irb` | Waits for input, agent doesn't know                     | `timeout-dead --sec 5 "python"`                          |
+| Interactive REPL | `vim` / `nano` / `less`   | May leave terminal echo disabled after kill             | `timeout-dead --sec 10 --signal INT "vim"`               |
 
 ## For AI agents
 
