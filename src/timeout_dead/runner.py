@@ -144,6 +144,7 @@ def run_command(
       stdout=stdout_target,
       stderr=stderr_target,
       text=capture_output,
+      encoding="utf-8" if capture_output else None,
       errors="backslashreplace" if capture_output else None,
       creationflags=creationflags,
       preexec_fn=getattr(os, "setpgrp", None) if not _Const.IS_WINDOWS else None,
