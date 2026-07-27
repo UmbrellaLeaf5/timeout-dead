@@ -47,6 +47,7 @@ class TestParseArguments:
     assert args.sec == 60.0
     assert args.signal == "TERM"
     assert args.no_output is False
+    assert args.capture_output is False
     assert args.command == ["echo", "hello"]
 
   # ------------------------------------------------
@@ -90,6 +91,25 @@ class TestParseArguments:
   def test_no_output(self) -> None:
     args = parse_arguments(["--no-output", "echo", "hello"])
     assert args.no_output is True
+
+  # ------------------------------------------------
+
+  def test_capture_output(self) -> None:
+    args = parse_arguments(["--capture-output", "echo", "hello"])
+    assert args.capture_output is True
+
+  # ------------------------------------------------
+
+  def test_capture_output_short_option(self) -> None:
+    args = parse_arguments(["-c", "echo", "hello"])
+    assert args.capture_output is True
+
+  # ------------------------------------------------
+
+  def test_command_short_c_is_preserved_after_command(self) -> None:
+    args = parse_arguments(["python", "-c", "print(1)"])
+    assert args.capture_output is False
+    assert args.command == ["python", "-c", "print(1)"]
 
   # ------------------------------------------------
 
@@ -511,6 +531,7 @@ class TestIntegration:
     assert "--sec" in result.stdout
     assert "--signal" in result.stdout
     assert "--no-output" in result.stdout
+    assert "--capture-output" in result.stdout
     assert "--version" in result.stdout
 
   # ------------------------------------------------
@@ -617,6 +638,35 @@ class TestIntegration:
     assert "Timeout:" in parts[0]
     assert "hello-flush" in parts[1]
     assert "Exit code:" in parts[2]
+
+  # ------------------------------------------------
+
+  def test_cli_capture_output_formats_streams(self) -> None:
+    command = "printf 'alpha-capture\\n'; printf 'beta-capture\\n' >&2"
+    result = _run_cli("--capture-output", command)
+    expected_stdout = (
+      f"Running: {command}\n"
+      "Timeout: 60.0 seconds\n"
+      f"{_Const.SEPARATOR}\n\n"
+      "beta-capture\n\n"
+      f"{_Const.SEPARATOR}\n\n"
+      "alpha-capture\n\n"
+      f"{_Const.SEPARATOR}\n"
+      "Exit code: 0\n\n"
+    )
+    assert result.returncode == 0
+    assert result.stdout == expected_stdout
+    assert "beta-capture" not in result.stderr
+
+  # ------------------------------------------------
+
+  def test_cli_capture_output_no_output_suppresses_normal_output(self) -> None:
+    command = "printf 'alpha-capture\\n'; printf 'beta-capture\\n' >&2"
+    result = _run_cli("--no-output", "--capture-output", command)
+    assert result.returncode == 0
+    assert result.stdout == ""
+    assert "alpha-capture" not in result.stderr
+    assert "beta-capture" not in result.stderr
 
 
 # MARK: Constants tests

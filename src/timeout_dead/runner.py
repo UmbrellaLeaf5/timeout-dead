@@ -76,6 +76,7 @@ def run_command(
   timeout: float = _Const.DEFAULT_TIMEOUT_S,
   signal_name: str = "TERM",
   no_output: bool = False,
+  capture_output: bool = False,
 ) -> int:
   """
   Run a command with timeout via bash.
@@ -85,6 +86,7 @@ def run_command(
     timeout (float): timeout in seconds
     signal_name (str): signal name for graceful termination
     no_output (bool): suppress normal output
+    capture_output (bool): capture and format stdout/stderr
 
   Returns:
     int: process return code (-1 on launch error)
@@ -108,7 +110,21 @@ def run_command(
     stdin: int | None = subprocess.DEVNULL if no_output else None
     cmd: list[str] = [find_bash(), "-c", command_string]
 
-    if _Const.IS_WINDOWS and not no_output and _stdin_is_console() and _stdout_is_console():
+    if capture_output and not no_output:
+      stdout_target: int | None = subprocess.PIPE
+      stderr_target: int | None = subprocess.PIPE
+
+    else:
+      stdout_target = subprocess.DEVNULL if no_output else None
+      stderr_target = subprocess.DEVNULL if no_output else None
+
+    if (
+      _Const.IS_WINDOWS
+      and not capture_output
+      and not no_output
+      and _stdin_is_console()
+      and _stdout_is_console()
+    ):
       winpty = shutil.which("winpty")
 
       if winpty is not None:
@@ -125,8 +141,9 @@ def run_command(
     process = subprocess.Popen(
       cmd,
       stdin=stdin,
-      stdout=subprocess.DEVNULL if no_output else None,
-      stderr=subprocess.DEVNULL if no_output else None,
+      stdout=stdout_target,
+      stderr=stderr_target,
+      text=capture_output,
       creationflags=creationflags,
       preexec_fn=getattr(os, "setpgrp", None) if not _Const.IS_WINDOWS else None,
     )
@@ -142,9 +159,28 @@ def run_command(
     )
 
     timer.start()
-    process.wait()
+
+    if capture_output and not no_output:
+      stdout_data, stderr_data = process.communicate()
+
+    else:
+      process.wait()
+      stdout_data = None
+      stderr_data = None
+
     timer.cancel()
     timer.join()
+
+    if capture_output and not no_output:
+      if stderr_data:
+        print(stderr_data, end="")
+
+      print()
+      print(_Const.SEPARATOR)
+      print()
+
+      if stdout_data:
+        print(stdout_data, end="")
 
     return process.returncode
 

@@ -53,6 +53,14 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
   )
 
   parser.add_argument(
+    "-c",
+    "--capture-output",
+    action="store_true",
+    default=False,
+    help="capture and format stdout/stderr with separators (default: interactive mode)",
+  )
+
+  parser.add_argument(
     "command",
     nargs=argparse.REMAINDER,
     help="command to execute",
@@ -87,14 +95,23 @@ def main(argv: list[str] | None = None) -> None:
     print(_Const.SEPARATOR)
     sys.stdout.flush()
 
+    if args.capture_output:
+      print()
+      sys.stdout.flush()
+
   return_code = run_command(
     command_string,
     timeout=args.sec,
     signal_name=args.signal,
     no_output=args.no_output,
+    capture_output=args.capture_output,
   )
 
   if not args.no_output:
+    if args.capture_output:
+      print()
+      sys.stdout.flush()
+
     print(_Const.SEPARATOR)
     sys.stdout.flush()
 

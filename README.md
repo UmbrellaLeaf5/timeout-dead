@@ -50,12 +50,16 @@ timeout-dead --signal INT --sec 30 "long-running-server"
 
 # Run silently — suppress all normal output
 timeout-dead --no-output "curl -s https://example.com"
+
+# Capture stderr/stdout and print them in separated blocks
+timeout-dead --capture-output "git diff --stat"
 ```
 
 ## Usage
 
 ```
-usage: timeout-dead [-h] [-v] [--sec SECONDS] [--signal SIGNAL] [--no-output] COMMAND ...
+usage: timeout-dead [-h] [-v] [--sec SECONDS] [--signal SIGNAL] [--no-output]
+                    [-c] COMMAND ...
 
 Lightweight command timeout utility.
 
@@ -68,6 +72,7 @@ options:
   --sec SECONDS         timeout in seconds (default: 60.0, accepts floats)
   --signal SIGNAL       signal to send on timeout (TERM, KILL, HUP, INT)
   --no-output           suppress normal output (stdout, stderr)
+  -c, --capture-output  capture and format stdout/stderr with separators
 ```
 
 ## How it works
