@@ -668,6 +668,19 @@ class TestIntegration:
     assert "alpha-capture" not in result.stderr
     assert "beta-capture" not in result.stderr
 
+  # ------------------------------------------------
+
+  def test_cli_capture_output_handles_undecodable_bytes(self) -> None:
+    command = (
+      'python -c "import sys; '
+      "sys.stdout.buffer.write(bytes([0x98])); "
+      'sys.stderr.buffer.write(bytes([0x98]))"'
+    )
+    result = _run_cli("--capture-output", command)
+    assert result.returncode == 0
+    assert "UnicodeDecodeError" not in result.stderr
+    assert "\\x98" in result.stdout
+
 
 # MARK: Constants tests
 # ------------------------------------------------
