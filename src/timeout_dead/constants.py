@@ -19,6 +19,7 @@ class _Const:
   MSG_NO_COMMAND: str = "Error: no command specified"
   MSG_BASH_NOT_FOUND: str = "bash not found in PATH"
   MSG_TIMEOUT_POSITIVE: str = "Error: timeout must be positive"
+  MSG_CAPTURE_IGNORED: str = "Warning: --capture-output is ignored when --no-output is set"
 
   @staticmethod
   def msg_timeout(timeout_s: float) -> str:

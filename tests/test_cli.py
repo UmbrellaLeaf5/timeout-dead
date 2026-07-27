@@ -113,6 +113,32 @@ class TestParseArguments:
 
   # ------------------------------------------------
 
+  def test_help_ignores_invalid_options_and_missing_command(
+    self,
+    capsys: pytest.CaptureFixture[str],
+  ) -> None:
+    with pytest.raises(SystemExit) as exc_info:
+      parse_arguments(["--sec", "invalid", "--help", "--signal", "INVALID"])
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0
+    assert "usage:" in captured.out
+    assert captured.err == ""
+
+  # ------------------------------------------------
+
+  def test_version_ignores_invalid_options_and_missing_command(
+    self,
+    capsys: pytest.CaptureFixture[str],
+  ) -> None:
+    with pytest.raises(SystemExit) as exc_info:
+      parse_arguments(["--sec", "invalid", "--version", "--signal", "INVALID"])
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0
+    assert captured.out.strip() == f"timeout-dead {_Const.PROJECT_VERSION}"
+    assert captured.err == ""
+
+  # ------------------------------------------------
+
   def test_invalid_signal(self) -> None:
     with pytest.raises(SystemExit):
       parse_arguments(["--signal", "INVALID", "echo", "x"])
@@ -533,6 +559,23 @@ class TestIntegration:
     assert "--no-output" in result.stdout
     assert "--capture-output" in result.stdout
     assert "--version" in result.stdout
+    assert "Flag priority:" in result.stdout
+
+  # ------------------------------------------------
+
+  def test_cli_help_ignores_other_flags_and_missing_command(self) -> None:
+    result = _run_cli("--sec", "invalid", "--help", "--signal", "INVALID")
+    assert result.returncode == 0
+    assert "usage:" in result.stdout
+    assert "no command" not in result.stderr.lower()
+
+  # ------------------------------------------------
+
+  def test_cli_version_ignores_other_flags_and_missing_command(self) -> None:
+    result = _run_cli("--sec", "invalid", "--version", "--signal", "INVALID")
+    assert result.returncode == 0
+    assert result.stdout.strip() == f"timeout-dead {_Const.PROJECT_VERSION}"
+    assert "no command" not in result.stderr.lower()
 
   # ------------------------------------------------
 
@@ -665,6 +708,7 @@ class TestIntegration:
     result = _run_cli("--no-output", "--capture-output", command)
     assert result.returncode == 0
     assert result.stdout == ""
+    assert _Const.MSG_CAPTURE_IGNORED in result.stderr
     assert "alpha-capture" not in result.stderr
     assert "beta-capture" not in result.stderr
 

@@ -9,6 +9,43 @@ from timeout_dead.constants import _Const
 from timeout_dead.runner import run_command
 
 
+# MARK: Private Helpers
+# ------------------------------------------------
+
+
+def _has_priority_option(argv: list[str], options: tuple[str, ...]) -> bool:
+  """Return True if a priority option appears before COMMAND starts."""
+
+  skip_next = False
+
+  for arg in argv:
+    if skip_next:
+      skip_next = False
+
+    elif arg == "--":
+      return False
+
+    elif arg in options:
+      return True
+
+    elif arg in ("--sec", "--signal"):
+      skip_next = True
+
+    elif arg.startswith("--sec=") or arg.startswith("--signal="):
+      pass
+
+    elif arg in ("--no-output", "--capture-output", "-c"):
+      pass
+
+    elif not arg.startswith("-"):
+      return False
+
+  return False
+
+
+# ------------------------------------------------
+
+
 # MARK: Public API
 # ------------------------------------------------
 
@@ -16,9 +53,17 @@ from timeout_dead.runner import run_command
 def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
   """Parse command-line arguments."""
 
+  argument_list = sys.argv[1:] if argv is None else argv
   parser = argparse.ArgumentParser(
     description="Lightweight command timeout utility.",
     formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog=(
+      "Flag priority:\n"
+      "  -h/--help and -v/--version exit immediately and ignore all other arguments.\n"
+      "  --sec and --signal apply before output mode selection.\n"
+      "  --no-output suppresses normal output and overrides --capture-output.\n"
+      "  COMMAND is required unless -h/--help or -v/--version is used."
+    ),
   )
 
   parser.add_argument(
@@ -49,7 +94,7 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     "--no-output",
     action="store_true",
     default=False,
-    help="suppress normal output (stdout, stderr)",
+    help="suppress normal output and override --capture-output",
   )
 
   parser.add_argument(
@@ -63,9 +108,15 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
   parser.add_argument(
     "command",
     nargs=argparse.REMAINDER,
-    help="command to execute",
+    help="command to execute (required unless -h/--help or -v/--version is used)",
     metavar="COMMAND",
   )
+
+  if _has_priority_option(argument_list, ("-h", "--help")):
+    parser.parse_args(["--help"])
+
+  if _has_priority_option(argument_list, ("-v", "--version")):
+    parser.parse_args(["--version"])
 
   return parser.parse_args(argv)
 
@@ -87,6 +138,11 @@ def main(argv: list[str] | None = None) -> None:
     sys.exit(1)
 
   command_string = " ".join(args.command)
+  capture_output = args.capture_output
+
+  if args.no_output and capture_output:
+    print(_Const.MSG_CAPTURE_IGNORED, file=sys.stderr)
+    capture_output = False
 
   if not args.no_output:
     print(f"Running: {command_string}")
@@ -95,7 +151,7 @@ def main(argv: list[str] | None = None) -> None:
     print(_Const.SEPARATOR)
     sys.stdout.flush()
 
-    if args.capture_output:
+    if capture_output:
       print()
       sys.stdout.flush()
 
@@ -104,11 +160,11 @@ def main(argv: list[str] | None = None) -> None:
     timeout=args.sec,
     signal_name=args.signal,
     no_output=args.no_output,
-    capture_output=args.capture_output,
+    capture_output=capture_output,
   )
 
   if not args.no_output:
-    if args.capture_output:
+    if capture_output:
       print()
       sys.stdout.flush()
 

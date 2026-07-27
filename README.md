@@ -71,9 +71,17 @@ options:
   -v, --version         show version and exit
   --sec SECONDS         timeout in seconds (default: 60.0, accepts floats)
   --signal SIGNAL       signal to send on timeout (TERM, KILL, HUP, INT)
-  --no-output           suppress normal output (stdout, stderr)
+  --no-output           suppress normal output and override --capture-output
   -c, --capture-output  capture and format stdout/stderr with separators
 ```
+
+Flag priority:
+
+1. `-h` / `--help` and `-v` / `--version` exit immediately and ignore all other arguments.
+2. `--sec` and `--signal` apply whenever a command is executed.
+3. `--no-output` suppresses all normal output and has priority over `--capture-output`.
+4. `--capture-output` is enabled only when `--no-output` is not set.
+5. `COMMAND` is required unless `-h` / `--help` or `-v` / `--version` is used.
 
 ## How it works
 
