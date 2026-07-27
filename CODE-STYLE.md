@@ -450,13 +450,13 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
 
 - Use MARK comments and separator lines to organise code into logical groups. Every non-trivial function is preceded by a MARK comment, and all functions are separated by section separator lines.
 
-- **Separator line is exactly 50 characters**: `# ` followed by 48 dashes (`# ------------------------------------------------`). Never use shorter or longer separators — always exactly 50 characters total.
+- **Separator line: exactly 50 dashes** (`# --------------------------------------------------`). Never use shorter or longer separators.
 
 - **Public methods** — Every non-trivial public method must be preceded by a `# MARK:` comment. The comment describes the method's purpose.
   - **Trivial methods** (single expression, one-liner) — a separator line alone is sufficient:
 
     ```python
-    # ------------------------------------------------
+    # --------------------------------------------------
 
     def get_user(user_id: str) -> User:
       return _repository.find_by_id(user_id)
@@ -465,8 +465,8 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
   - **Non-trivial methods** — require a full MARK comment:
 
     ```python
-    # MARK: calculateAndPersist
-    # ------------------------------------------------
+    # MARK: Calculate and persist
+    # --------------------------------------------------
 
     def calculate_and_persist(
       entity: OrderEntity,
@@ -480,7 +480,7 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
 
     ```python
     # MARK: POST /api/order/calculate
-    # ------------------------------------------------
+    # --------------------------------------------------
 
     def calculate(order_id: str) -> OrderResponse:
       ...
@@ -490,50 +490,50 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
 
     ```python
     # MARK: Calculation helpers
-    # ------------------------------------------------
+    # --------------------------------------------------
 
     def calculate_time(...) -> float:
       ...
 
-    # ------------------------------------------------
+    # --------------------------------------------------
 
     def calculate_point(...) -> Point:
       ...
 
-    # ------------------------------------------------
+    # --------------------------------------------------
 
     def validate_calculation(...) -> None:
       ...
     ```
 
 - All private helpers must be grouped under a `# MARK: Private Helpers` section marker. Within this section:
-  - Most private methods use a separator line (`# ------------------------------------------------`) between them.
+  - Most private methods use a separator line (`# --------------------------------------------------`) between them.
   - Important private methods (complex algorithm, critical business logic) may get their own `# MARK:` comment.
 
   ```python
   # MARK: Private Helpers
-  # ------------------------------------------------
+  # --------------------------------------------------
 
   def _build_response(...) -> Response:
     ...
 
-  # ------------------------------------------------
+  # --------------------------------------------------
 
   def _validate_input(...) -> None:
     ...
 
   # MARK: Complex calculation algorithm
-  # ------------------------------------------------
+  # --------------------------------------------------
 
   def _calculate_matrix(...) -> Matrix:
     ...
   ```
 
-- After a closing `# ------------------------------------------------` or `# MARK:` section header — a blank line before the next statement.
+- After a closing `# --------------------------------------------------` or `# MARK:` section header — a blank line before the next statement.
 
   ```python
   # MARK: Private Helpers
-  # ------------------------------------------------
+  # --------------------------------------------------
 
   def _build_response(...) -> Response:
     ...
@@ -543,14 +543,15 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
   - `# MARK: POST /api/order/calculate`
   - `# MARK: Private Helpers`
   - `# MARK: Time-to-interaction calculation`
+- `# MARK:` text must be a readable English phrase, not a function or method identifier. Do not use camelCase or PascalCase names such as `calculateAndPersist` or `BuildResponse` in MARK comments.
 
 ### Docstrings
 
 - Every non-trivial public function must have a multi-line docstring placed immediately before the function body, after the MARK/separator:
 
   ```python
-  # MARK: calculateAndPersist
-  # ------------------------------------------------
+  # MARK: Calculate and persist
+  # --------------------------------------------------
 
   def calculate_and_persist(
     entity: OrderEntity,
