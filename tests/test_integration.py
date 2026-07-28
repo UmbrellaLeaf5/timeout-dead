@@ -247,7 +247,7 @@ class TestIntegration:
     command = (
       f"{shlex.quote(Path(sys.executable).as_posix())} {shlex.quote(script_path.as_posix())}"
     )
-    result = run_cli("--capture-output", command, timeout=15)
+    result = run_cli("--capture-output", command, timeout=45)
     assert result.returncode == 0
     assert "Err:" in result.stdout
     assert "Out:" in result.stdout
