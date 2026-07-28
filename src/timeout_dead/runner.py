@@ -4,12 +4,12 @@ import os
 import shutil
 import signal
 import subprocess
-import sys
 import threading
 from ctypes.wintypes import HANDLE
 from typing import TextIO, cast
 
 from timeout_dead.capture import stream_captured_output
+from timeout_dead.cli.output import write_stderr
 from timeout_dead.constants import _Const
 from timeout_dead.platform.console import stdin_is_console, stdout_is_console
 from timeout_dead.platform.windows import (
@@ -142,7 +142,7 @@ def run_command(
     if process and process.poll() is None:
       terminate_process(process, signal_num=None)
 
-    print(f"{_Const.msg_exec_error(e)}", file=sys.stderr)
+    write_stderr(f"{_Const.msg_exec_error(e)}{_Const.NEWLINE}")
 
     return _Const.EXEC_ERROR_RETURN_CODE
 

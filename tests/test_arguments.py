@@ -180,11 +180,6 @@ class TestConstants:
 
   # ------------------------------------------------
 
-  def test_header_separator_length(self) -> None:
-    assert len(_Const.SEPARATOR) == 50
-
-  # ------------------------------------------------
-
   def test_project_version(self) -> None:
     version = _Const.PROJECT_VERSION
     assert isinstance(version, str)

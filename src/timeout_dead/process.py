@@ -3,10 +3,10 @@
 import os
 import signal
 import subprocess
-import sys
 import time
 from ctypes.wintypes import HANDLE
 
+from timeout_dead.cli.output import write_stderr
 from timeout_dead.constants import _Const
 from timeout_dead.platform.windows import close_job
 
@@ -92,16 +92,10 @@ def terminate_process(
       os.killpg(pgid, unix_signal)  # pyright: ignore[reportAttributeAccessIssue]
 
   except ProcessLookupError:
-    print(
-      f"\n{_Const.msg_process_not_found(process.pid)}",
-      file=sys.stderr,
-    )
+    write_stderr(f"{_Const.NEWLINE}{_Const.msg_process_not_found(process.pid)}{_Const.NEWLINE}")
 
   except OSError as exc:
-    print(
-      f"\n{_Const.msg_terminate_failed(process.pid, exc)}",
-      file=sys.stderr,
-    )
+    write_stderr(f"{_Const.NEWLINE}{_Const.msg_terminate_failed(process.pid, exc)}{_Const.NEWLINE}")
 
 
 # ------------------------------------------------
@@ -123,4 +117,4 @@ def kill_with_timeout(
   if process.poll() is None:
     terminate_process(process)
 
-  print(f"\n{_Const.msg_timeout(timeout)}", file=sys.stderr)
+  write_stderr(f"{_Const.NEWLINE}{_Const.msg_timeout(timeout)}{_Const.NEWLINE}")

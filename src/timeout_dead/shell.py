@@ -3,6 +3,7 @@
 import shutil
 import sys
 
+from timeout_dead.cli.output import write_stderr
 from timeout_dead.constants import _Const
 
 
@@ -24,7 +25,7 @@ def find_bash() -> str:
   bash_path = shutil.which(_Const.BASH_EXECUTABLE)
 
   if bash_path is None:
-    print(f"\n{_Const.MSG_BASH_NOT_FOUND}", file=sys.stderr)
+    write_stderr(f"{_Const.NEWLINE}{_Const.MSG_BASH_NOT_FOUND}{_Const.NEWLINE}")
     sys.exit(_Const.EXIT_FAILURE)
 
   return bash_path

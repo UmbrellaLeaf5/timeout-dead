@@ -11,7 +11,7 @@ from timeout_dead.constants import _Const
 def _format_output_block(title: str, text: str) -> str:
   """Format one final captured output block."""
 
-  block = f"{title}{_Const.BLANK_LINE}"
+  block = f"{title}{_Const.CAPTURE_BLOCK_GAP}"
 
   if not text:
     return block

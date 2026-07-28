@@ -24,11 +24,11 @@ class _Const:
   INITIAL_FINISHED_COUNT: int = 0
   INITIAL_RENDER_TIME: float = 0.0
   NO_FLAGS: int = 0
-  SEPARATOR: str = "-" * 50
 
   NEWLINE: str = "\n"
   CARRIAGE_RETURN: str = "\r"
   BLANK_LINE: str = "\n\n"
+  CAPTURE_BLOCK_GAP: str = "\n\n\n"
   STDERR_TITLE: str = "Err:"
   STDOUT_TITLE: str = "Out:"
   RUNNING_TITLE: str = "Running"
@@ -83,7 +83,7 @@ class _Const:
 
   @staticmethod
   def msg_timeout(timeout_s: float) -> str:
-    return f"Timeout exceeded {timeout_s}s"
+    return f"Timeout exceeded {timeout_s}{_Const.TIMEOUT_UNIT}"
 
   # ------------------------------------------------
 

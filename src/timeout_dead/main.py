@@ -5,7 +5,7 @@
 import sys
 
 from timeout_dead.cli.arguments import parse_arguments
-from timeout_dead.cli.output import write_stdout
+from timeout_dead.cli.output import write_stderr, write_stdout
 from timeout_dead.constants import _Const
 from timeout_dead.runner import run_command
 
@@ -20,24 +20,24 @@ def main(argv: list[str] | None = None) -> None:
   args = parse_arguments(argv)
 
   if not args.command:
-    print(f"{_Const.MSG_NO_COMMAND}", file=sys.stderr)
+    write_stderr(f"{_Const.MSG_NO_COMMAND}{_Const.NEWLINE}")
     sys.exit(_Const.EXIT_FAILURE)
 
   if args.sec <= _Const.MIN_TIMEOUT_S:
-    print(_Const.MSG_TIMEOUT_POSITIVE, file=sys.stderr)
+    write_stderr(f"{_Const.MSG_TIMEOUT_POSITIVE}{_Const.NEWLINE}")
     sys.exit(_Const.EXIT_FAILURE)
 
   command_string = _Const.COMMAND_JOINER.join(args.command)
   capture_output = args.capture_output
 
   if args.no_output and capture_output:
-    print(_Const.MSG_CAPTURE_IGNORED, file=sys.stderr)
+    write_stderr(f"{_Const.MSG_CAPTURE_IGNORED}{_Const.NEWLINE}")
     capture_output = False
 
   if not args.no_output:
     write_stdout(f"{_Const.RUNNING_TITLE}: {command_string}{_Const.BLANK_LINE}")
     write_stdout(
-      f"{_Const.TIMEOUT_TITLE}: {args.sec} {_Const.TIMEOUT_UNIT}{_Const.BLANK_LINE}{_Const.NEWLINE}"
+      f"{_Const.TIMEOUT_TITLE}: {args.sec} {_Const.TIMEOUT_UNIT}{_Const.CAPTURE_BLOCK_GAP}"
     )
 
     if not capture_output:

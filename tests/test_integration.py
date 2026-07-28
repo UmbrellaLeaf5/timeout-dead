@@ -148,7 +148,6 @@ class TestIntegration:
     )
     assert result.returncode == 0
     assert result.stdout == expected_stdout
-    assert _Const.SEPARATOR not in result.stdout
     assert "Err:" not in result.stdout
     assert "Out:" in result.stdout
 
@@ -162,8 +161,8 @@ class TestIntegration:
       "\n"
       "Timeout: 60.0 seconds\n"
       "\n\n"
-      "Err:\n\n"
-      "Out:\n\n"
+      "Err:\n\n\n"
+      "Out:\n\n\n"
       "alpha-capture\n\n\n"
       "Exit code: 0\n\n"
     )
@@ -176,7 +175,7 @@ class TestIntegration:
     command = "printf 'beta-capture\n' >&2"
     result = run_cli("--capture-output", command)
     assert result.returncode == 0
-    assert "Err:\n\nbeta-capture" in result.stdout
+    assert "Err:\n\n\nbeta-capture" in result.stdout
     assert "Out:" in result.stdout
     assert "beta-capture" not in result.stderr
 
@@ -190,8 +189,8 @@ class TestIntegration:
       "\n"
       "Timeout: 60.0 seconds\n"
       "\n\n"
-      "Err:\n\n"
-      "Out:\n\n"
+      "Err:\n\n\n"
+      "Out:\n\n\n"
       "alpha-capture\n\n"
       "Exit code: 0\n\n"
     )
