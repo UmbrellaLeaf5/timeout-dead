@@ -20,7 +20,7 @@ All code-writing rules for Python projects.
 
 - Formatting and linting are governed by `ruff` (configured via `ruff.toml`). `ruff` is the single source of truth — no `black`, no `isort`, no `flake8`. Run `ruff check . && ruff format --check .` to verify.
 
-- **0 warnings required.** Ruff must return zero errors and zero warnings on every commit. Never suppress or skip a ruff rule without an explicit instruction from the user. No `#noqa`, no `per-file-ignores`, no rule exclusions unless the user explicitly requests it.
+- **0 warnings required.** Ruff must return zero errors and zero warnings on every commit. Never suppress or skip a ruff rule without an explicit instruction from the user. No `# noqa`, no `per-file-ignores`, no rule exclusions unless the user explicitly requests it.
 
 ## Language Usage
 
@@ -33,7 +33,7 @@ All code-writing rules for Python projects.
   def get_user(user_id: str) -> User:
     ...
 
-  # ------------------------------------------------
+  # --------------------------------------------------
 
   def process(items: list[Item]) -> None:
     ...
@@ -223,7 +223,7 @@ from timeout_dead.config import settings
 
 ### Exports
 
-- In `__init__.py` files, declare the public API with `__all__`. Ruff respects `__all__`, so you don't need `import X as X` or `#noqa` comments.
+- In `__init__.py` files, declare the public API with `__all__`. Ruff respects `__all__`, so you don't need `import X as X` or `# noqa` comments.
 
 ```python
 # timeout_dead/core/__init__.py
@@ -274,7 +274,7 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
   ```
 
 - Between peer-level definitions (top-level functions, member methods), use one of the following:
-  - A separator line (`# ------------------------------------------------`) alone — for trivial methods or private helpers
+  - A separator line (`# --------------------------------------------------`) alone — for trivial methods or private helpers
   - A MARK comment with a separator line — for important methods
   - A MARK comment for a group, with separator lines between methods within the group
 
@@ -287,7 +287,7 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
     ...
 
 
-  # ------------------------------------------------
+  # --------------------------------------------------
 
 
   def _compute_new_plan(
@@ -297,7 +297,7 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
     ...
 
   # MARK: Time-to-interaction calculation
-  # ------------------------------------------------
+  # --------------------------------------------------
 
 
   def _calculate_interaction_time(
@@ -315,12 +315,12 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
     def calculate_time(...) -> float:
       ...
 
-    # ------------------------------------------------
+    # --------------------------------------------------
 
     def calculate_point(...) -> Point:
       ...
 
-    # ------------------------------------------------
+    # --------------------------------------------------
 
     def validate_calculation(...) -> None:
       ...
@@ -332,7 +332,7 @@ __all__ = ["UserService", "OrderService", "User", "Order"]
 
   ```python
   # MARK: Private Helpers
-  # ------------------------------------------------
+  # --------------------------------------------------
 
 
   def _build_response(...) -> Response:
@@ -642,20 +642,20 @@ class Math:
   EARTH_RADIUS_M: float = 6_371_000.0
   DEG_TO_RAD: float = pi / 180.0
 
-# ------------------------------------------------
+# --------------------------------------------------
 
 class Entity:
   USER = "User"
   ORDER = "Order"
   PRODUCT = "Product"
 
-# ------------------------------------------------
+# --------------------------------------------------
 
 class Validation:
   INVALID_EMAIL = "Invalid email format"
   REQUIRED_FIELD = "Required field is missing"
 
-# ------------------------------------------------
+# --------------------------------------------------
 
 class Pattern:
   UUID_RE = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
@@ -689,7 +689,7 @@ from uuid import uuid4
 def sample_user() -> User:
   return User(id=uuid4(), fullname="Test User", email="test@example.com")
 
-# ------------------------------------------------
+# --------------------------------------------------
 
 @pytest.mark.parametrize("name,valid", [
   ("Alice", True),
@@ -698,7 +698,7 @@ def sample_user() -> User:
 def test_validate_name(name: str, valid: bool):
   assert User.is_valid_name(name) == valid
 
-# ------------------------------------------------
+# --------------------------------------------------
 
 @pytest.mark.skipif(not os.getenv("CI"), reason="Requires external service")
 def test_external_api():
