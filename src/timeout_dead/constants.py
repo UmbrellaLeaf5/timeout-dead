@@ -19,10 +19,6 @@ class _Const:
   MIN_TIMEOUT_S: float = 0.0
   GRACE_PERIOD_S: float = 1.0
   EXIT_FAILURE: int = 1
-  COUNT_INCREMENT: int = 1
-  INITIAL_LINE_COUNT: int = 0
-  INITIAL_FINISHED_COUNT: int = 0
-  INITIAL_RENDER_TIME: float = 0.0
   NO_FLAGS: int = 0
 
   NEWLINE: str = "\n"
@@ -35,8 +31,6 @@ class _Const:
   TIMEOUT_TITLE: str = "Timeout"
   TIMEOUT_UNIT: str = "seconds"
   EXIT_CODE_TITLE: str = "Exit code"
-  COMMAND_JOINER: str = " "
-  MAIN_MODULE_NAME: str = "__main__"
 
   MSG_NO_COMMAND: str = "Error: no command specified"
   MSG_BASH_NOT_FOUND: str = "bash not found in PATH"
@@ -83,7 +77,7 @@ class _Const:
 
   @staticmethod
   def msg_timeout(timeout_s: float) -> str:
-    return f"Timeout exceeded {timeout_s}{_Const.TIMEOUT_UNIT}"
+    return f"Timeout exceeded {timeout_s} {_Const.TIMEOUT_UNIT}"
 
   # ------------------------------------------------
 

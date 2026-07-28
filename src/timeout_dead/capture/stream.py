@@ -61,9 +61,9 @@ def collect_captured_output(
     _Const.STDERR_TITLE: "",
     _Const.STDOUT_TITLE: "",
   }
-  rendered_lines = _Const.INITIAL_LINE_COUNT
-  finished_count = _Const.INITIAL_FINISHED_COUNT
-  last_render_time = _Const.INITIAL_RENDER_TIME
+  rendered_lines = 0
+  finished_count = 0
+  last_render_time = 0.0
 
   if live_preview:
     hide_cursor()
@@ -79,7 +79,7 @@ def collect_captured_output(
       title, chunk = output_queue.get()
 
       if chunk is None:
-        finished_count += _Const.COUNT_INCREMENT
+        finished_count += 1
 
         continue
 

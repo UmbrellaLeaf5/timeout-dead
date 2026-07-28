@@ -27,7 +27,7 @@ def main(argv: list[str] | None = None) -> None:
     write_stderr(f"{_Const.MSG_TIMEOUT_POSITIVE}{_Const.NEWLINE}")
     sys.exit(_Const.EXIT_FAILURE)
 
-  command_string = _Const.COMMAND_JOINER.join(args.command)
+  command_string = " ".join(args.command)
   capture_output = args.capture_output
 
   if args.no_output and capture_output:
@@ -60,5 +60,5 @@ def main(argv: list[str] | None = None) -> None:
   sys.exit(return_code)
 
 
-if __name__ == _Const.MAIN_MODULE_NAME:
+if __name__ == "__main__":
   main()

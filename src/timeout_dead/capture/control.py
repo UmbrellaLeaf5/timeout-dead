@@ -4,21 +4,8 @@ import ctypes
 import importlib
 import sys
 
+from timeout_dead.cli.output import write_stdout
 from timeout_dead.constants import _Const
-
-
-# MARK: Output helpers
-# ------------------------------------------------
-
-
-def write_stdout(text: str) -> None:
-  """Write text directly to stdout and flush immediately."""
-
-  sys.stdout.write(text)
-  sys.stdout.flush()
-
-
-# ------------------------------------------------
 
 
 def hide_cursor() -> None:

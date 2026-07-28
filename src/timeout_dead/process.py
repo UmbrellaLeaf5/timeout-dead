@@ -36,6 +36,15 @@ def _taskkill_tree(pid: int) -> None:
     pass
 
 
+# ------------------------------------------------
+
+
+def _write_error_line(message: str) -> None:
+  """Write one stderr message surrounded by blank line spacing."""
+
+  write_stderr(f"{_Const.NEWLINE}{message}{_Const.NEWLINE}")
+
+
 # MARK: Process termination
 # ------------------------------------------------
 
@@ -92,10 +101,10 @@ def terminate_process(
       os.killpg(pgid, unix_signal)  # pyright: ignore[reportAttributeAccessIssue]
 
   except ProcessLookupError:
-    write_stderr(f"{_Const.NEWLINE}{_Const.msg_process_not_found(process.pid)}{_Const.NEWLINE}")
+    _write_error_line(_Const.msg_process_not_found(process.pid))
 
   except OSError as exc:
-    write_stderr(f"{_Const.NEWLINE}{_Const.msg_terminate_failed(process.pid, exc)}{_Const.NEWLINE}")
+    _write_error_line(_Const.msg_terminate_failed(process.pid, exc))
 
 
 # ------------------------------------------------
@@ -117,4 +126,4 @@ def kill_with_timeout(
   if process.poll() is None:
     terminate_process(process)
 
-  write_stderr(f"{_Const.NEWLINE}{_Const.msg_timeout(timeout)}{_Const.NEWLINE}")
+  _write_error_line(_Const.msg_timeout(timeout))

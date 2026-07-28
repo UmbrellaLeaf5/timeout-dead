@@ -51,7 +51,7 @@ def _has_priority_option(argv: list[str], options: tuple[str, ...]) -> bool:
 def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
   """Parse command-line arguments."""
 
-  argument_list = sys.argv[_Const.COUNT_INCREMENT :] if argv is None else argv
+  argument_list = sys.argv[1:] if argv is None else argv
   parser = argparse.ArgumentParser(
     description=_Const.CLI_DESCRIPTION,
     formatter_class=argparse.RawDescriptionHelpFormatter,
