@@ -1,9 +1,21 @@
 """Captured output rendering helpers."""
 
+import ctypes
+import shutil
 import sys
 import threading
 from queue import Queue
 from typing import TextIO
+
+from timeout_dead.constants import _Const
+
+
+# MARK: Constants
+# ------------------------------------------------
+
+
+TAIL_LINE_COUNT = 5
+ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
 
 
 # MARK: Helpers
@@ -41,94 +53,204 @@ def _read_captured_stream(
 # ------------------------------------------------
 
 
-def _finish_stream_block(has_output: bool, last_char: str | None) -> None:
-  """End a streamed block with exactly one blank line after content."""
+def _last_lines(text: str, count: int = TAIL_LINE_COUNT) -> str:
+  """Return the last *count* logical lines from text."""
 
-  if not has_output:
-    return
+  if not text:
+    return ""
 
-  if last_char == "\n":
-    _write_stdout("\n")
+  lines = text.splitlines()
 
-  else:
-    _write_stdout("\n\n")
+  if not lines:
+    return ""
 
+  tail = "\n".join(lines[-count:])
 
-# ------------------------------------------------
+  if text.endswith("\n"):
+    return f"{tail}\n"
 
-
-def _stream_captured_output_plain(
-  output_queue: Queue[tuple[str, str | None]],
-  thread_count: int,
-) -> None:
-  """Stream captured output sequentially for non-TTY stdout."""
-
-  current_title = "Err:"
-  current_has_output = False
-  current_last_char: str | None = None
-  finished_count = 0
-  out_title_printed = False
-
-  _write_stdout("Err:\n\n")
-
-  while finished_count < thread_count:
-    title, chunk = output_queue.get()
-
-    if chunk is None:
-      finished_count += 1
-
-      continue
-
-    if title != current_title:
-      _finish_stream_block(current_has_output, current_last_char)
-      _write_stdout(f"{title}\n\n")
-      current_title = title
-      current_has_output = False
-      current_last_char = None
-
-      if title == "Out:":
-        out_title_printed = True
-
-    _write_stdout(chunk)
-    current_has_output = True
-    current_last_char = chunk[-1]
-
-  _finish_stream_block(current_has_output, current_last_char)
-
-  if not out_title_printed:
-    _write_stdout("Out:\n\n")
+  return tail
 
 
 # ------------------------------------------------
 
 
-def _live_render_captured_output(stderr_text: str, stdout_text: str, rendered_lines: int) -> int:
-  """Redraw captured output blocks and return rendered line count."""
+def _terminal_preview_width() -> int:
+  """Return a safe line width for live preview text."""
+
+  terminal_width = shutil.get_terminal_size((80, 24)).columns
+
+  return max(20, terminal_width - 1)
+
+
+# ------------------------------------------------
+
+
+def _truncate_preview_line(line: str, width: int) -> str:
+  """Truncate one preview line so it does not wrap in the terminal."""
+
+  if len(line) <= width:
+    return line
+
+  if width <= 3:
+    return line[:width]
+
+  return f"{line[: width - 3]}..."
+
+
+# ------------------------------------------------
+
+
+def _format_preview_text(text: str, width: int) -> str:
+  """Format tail preview text with width-limited lines."""
+
+  tail = _last_lines(text)
+
+  if not tail:
+    return ""
+
+  lines = tail.splitlines()
+  preview = "\n".join(_truncate_preview_line(line, width) for line in lines)
+
+  if tail.endswith("\n"):
+    return f"{preview}\n"
+
+  return preview
+
+
+# ------------------------------------------------
+
+
+def _format_preview_block(title: str, text: str, width: int) -> str:
+  """Format one live preview block with stable spacing."""
+
+  preview = _format_preview_text(text, width)
+  block = f"{title}\n\n"
+
+  if preview:
+    block += preview
+
+    if not preview.endswith("\n"):
+      block += "\n"
+
+    block += "\n"
+
+  return block
+
+
+# ------------------------------------------------
+
+
+def _enable_windows_virtual_terminal() -> bool:
+  """Enable ANSI cursor control for a real Windows console."""
+
+  if not _Const.IS_WINDOWS:
+    return True
+
+  try:
+    import msvcrt  # noqa: PLC0415  — Windows-only, imported lazily
+
+    handle = msvcrt.get_osfhandle(sys.stdout.fileno())
+    mode = ctypes.c_uint32()
+    get_console_mode = getattr(_Const.KERNEL32, "GetConsoleMode", None)
+    set_console_mode = getattr(_Const.KERNEL32, "SetConsoleMode", None)
+
+    if get_console_mode is None or set_console_mode is None:
+      return True
+
+    if not get_console_mode(handle, ctypes.byref(mode)):
+      return True
+
+    next_mode = mode.value | ENABLE_VIRTUAL_TERMINAL_PROCESSING
+    return bool(set_console_mode(handle, next_mode))
+
+  except (OSError, ValueError, ImportError):
+    return True
+
+
+# ------------------------------------------------
+
+
+def _supports_live_preview() -> bool:
+  """Return True when stdout can handle ANSI redraw safely."""
+
+  return sys.stdout.isatty() and _enable_windows_virtual_terminal()
+
+
+# ------------------------------------------------
+
+
+def _format_output_block(title: str, text: str) -> str:
+  """Format one final captured output block."""
+
+  block = f"{title}\n\n"
+
+  if not text:
+    return block
+
+  block += text
+
+  if text.endswith("\n"):
+    return f"{block}\n"
+
+  return f"{block}\n\n"
+
+
+# ------------------------------------------------
+
+
+def _render_final_output(stderr_text: str, stdout_text: str) -> None:
+  """Print full captured stderr/stdout blocks."""
+
+  _write_stdout(_format_output_block("Err:", stderr_text))
+  _write_stdout(_format_output_block("Out:", stdout_text))
+
+
+# ------------------------------------------------
+
+
+def _render_live_tail(stderr_text: str, stdout_text: str, rendered_lines: int) -> int:
+  """Redraw captured output tail blocks and return rendered line count."""
 
   if rendered_lines:
     _write_stdout(f"\x1b[{rendered_lines}F\x1b[J")
 
-  rendered = f"Err:\n\n{stderr_text}\nOut:\n\n{stdout_text}"
+  width = _terminal_preview_width()
+  rendered = _format_preview_block("Err:", stderr_text, width)
+  rendered += _format_preview_block("Out:", stdout_text, width)
   _write_stdout(rendered)
 
-  return rendered.count("\n") + 1
+  return rendered.count("\n")
 
 
 # ------------------------------------------------
 
 
-def _stream_captured_output_live(
+def _clear_live_tail(rendered_lines: int) -> None:
+  """Clear the previously rendered TTY preview."""
+
+  if rendered_lines:
+    _write_stdout(f"\x1b[{rendered_lines}F\x1b[J")
+
+
+# ------------------------------------------------
+
+
+def _collect_captured_output(
   output_queue: Queue[tuple[str, str | None]],
   thread_count: int,
-) -> None:
-  """Stream captured output by redrawing Err/Out blocks on a TTY."""
+  *,
+  live_preview: bool,
+) -> tuple[str, str]:
+  """Collect full captured output and optionally redraw a TTY tail preview."""
 
   stderr_text = ""
   stdout_text = ""
   rendered_lines = 0
   finished_count = 0
 
-  rendered_lines = _live_render_captured_output(stderr_text, stdout_text, rendered_lines)
+  if live_preview:
+    rendered_lines = _render_live_tail(stderr_text, stdout_text, rendered_lines)
 
   while finished_count < thread_count:
     title, chunk = output_queue.get()
@@ -144,9 +266,13 @@ def _stream_captured_output_live(
     else:
       stdout_text += chunk
 
-    rendered_lines = _live_render_captured_output(stderr_text, stdout_text, rendered_lines)
+    if live_preview:
+      rendered_lines = _render_live_tail(stderr_text, stdout_text, rendered_lines)
 
-  _write_stdout("\n")
+  if live_preview:
+    _clear_live_tail(rendered_lines)
+
+  return stderr_text, stdout_text
 
 
 # MARK: Public API
@@ -154,7 +280,7 @@ def _stream_captured_output_live(
 
 
 def stream_captured_output(stdout_stream: TextIO, stderr_stream: TextIO) -> None:
-  """Stream captured stderr/stdout to stdout with labels."""
+  """Stream captured stderr/stdout tail preview, then print full labeled blocks."""
 
   output_queue: Queue[tuple[str, str | None]] = Queue()
   threads = [
@@ -171,11 +297,13 @@ def stream_captured_output(stdout_stream: TextIO, stderr_stream: TextIO) -> None
   for thread in threads:
     thread.start()
 
-  if sys.stdout.isatty():
-    _stream_captured_output_live(output_queue, len(threads))
-
-  else:
-    _stream_captured_output_plain(output_queue, len(threads))
+  stderr_text, stdout_text = _collect_captured_output(
+    output_queue,
+    len(threads),
+    live_preview=_supports_live_preview(),
+  )
 
   for thread in threads:
     thread.join()
+
+  _render_final_output(stderr_text, stdout_text)

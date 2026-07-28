@@ -51,7 +51,7 @@ timeout-dead --signal INT --sec 30 "long-running-server"
 # Run silently — suppress all normal output
 timeout-dead --no-output "curl -s https://example.com"
 
-# Capture stderr/stdout and print them as labeled live blocks
+# Capture stderr/stdout with a five-line live tail preview
 timeout-dead --capture-output "git diff --stat"
 
 # Run the bundled stdout/stderr demo script with live capture
@@ -91,7 +91,7 @@ Out:
 Exit code: 0
 ```
 
-Captured output format (`--capture-output`):
+Captured final output format (`--capture-output`):
 
 ```text
 Running: git status --short --branch
@@ -110,8 +110,14 @@ Exit code: 0
 
 In capture mode, `timeout-dead` reads stdout and stderr concurrently while the command is
 still running. When stdout is an interactive terminal, the `Err:` and `Out:` blocks are
-redrawn live. When stdout is redirected or captured by CI/test tools, output stays plain
-text with no ANSI control sequences.
+redrawn as a live tail preview: only the last 5 stderr lines and last 5 stdout lines are
+shown, so large output does not scroll the whole screen. After the command exits, the
+preview is cleared and the complete stderr/stdout text is printed in the final format
+shown above.
+
+When stdout is redirected or captured by CI/test tools, output stays plain text with no
+ANSI control sequences. In that mode, `timeout-dead` prints the same complete final blocks
+after the command exits.
 
 The default mode intentionally does not capture streams. It inherits the terminal handles
 so interactive and TUI programs such as `vim`, `less`, REPLs, Gradle progress output, and

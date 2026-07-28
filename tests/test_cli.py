@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pytest
 
+from timeout_dead import capture
 from timeout_dead.constants import _Const
 from timeout_dead.main import main, parse_arguments
 from timeout_dead.process import find_bash
@@ -450,6 +451,43 @@ class TestNoOutput:
     assert "Exit code" in captured.out
 
 
+# MARK: Capture rendering tests
+# ------------------------------------------------
+
+
+class TestCaptureRendering:
+  def test_preview_block_keeps_next_title_on_separate_line(self) -> None:
+    err_block = capture._format_preview_block("Err:", "err-without-newline", 80)
+    out_block = capture._format_preview_block("Out:", "out-without-newline", 80)
+    assert f"{err_block}{out_block}" == (
+      "Err:\n\nerr-without-newline\n\nOut:\n\nout-without-newline\n\n"
+    )
+
+  # ------------------------------------------------
+
+  def test_preview_block_limits_tail_lines_and_width(self) -> None:
+    text = "\n".join(
+      [
+        "line-1",
+        "line-2",
+        "line-3",
+        "line-4",
+        "line-5",
+        "line-6",
+        "line-7-with-long-suffix",
+      ]
+    )
+    block = capture._format_preview_block("Err:", text, 12)
+    assert "line-1" not in block
+    assert "line-2" not in block
+    assert "line-3" in block
+    assert "line-6" in block
+    assert "line-7-wi..." in block
+
+    for line in block.splitlines():
+      assert len(line) <= 12
+
+
 # MARK: Main tests
 # ------------------------------------------------
 
@@ -730,33 +768,21 @@ class TestIntegration:
 
   # ------------------------------------------------
 
-  def test_cli_capture_output_streams_before_process_exit(self) -> None:
+  def test_cli_capture_output_prints_full_output_after_tail_preview(self) -> None:
     command = (
-      'python -c "import time; '
-      "print('first-stream', flush=True); "
-      "time.sleep(1); "
-      "print('second-stream', flush=True)\""
+      'python -c "'
+      "import sys; "
+      "[print(f'out-line-{i}') for i in range(1, 8)]; "
+      "[print(f'err-line-{i}', file=sys.stderr) for i in range(1, 8)]"
+      '"'
     )
-    process = subprocess.Popen(
-      [sys.executable, "-m", "timeout_dead.main", "--capture-output", command],
-      stdout=subprocess.PIPE,
-      stderr=subprocess.PIPE,
-      text=True,
-    )
-    assert process.stdout is not None
-    first_seen = False
-
-    for line in process.stdout:
-      if "first-stream" in line:
-        first_seen = True
-
-        break
-
-    assert first_seen is True
-    assert process.poll() is None
-    stdout, stderr = process.communicate(timeout=10)
-    assert "second-stream" in stdout
-    assert "UnicodeDecodeError" not in stderr
+    result = _run_cli("--capture-output", command)
+    assert result.returncode == 0
+    assert "\x1b[" not in result.stdout
+    assert "err-line-1" in result.stdout
+    assert "err-line-7" in result.stdout
+    assert "out-line-1" in result.stdout
+    assert "out-line-7" in result.stdout
 
   # ------------------------------------------------
 
