@@ -1,6 +1,5 @@
 """Command execution with timeout."""
 
-import ctypes
 import os
 import shutil
 import signal
@@ -8,7 +7,10 @@ import subprocess
 import sys
 import threading
 from ctypes.wintypes import HANDLE
+from typing import TextIO, cast
 
+from timeout_dead.capture import stream_captured_output
+from timeout_dead.console import stdin_is_console, stdout_is_console
 from timeout_dead.constants import _Const
 from timeout_dead.process import find_bash, kill_with_timeout, terminate_process
 from timeout_dead.win32 import (
@@ -16,85 +18,6 @@ from timeout_dead.win32 import (
   close_job,
   create_kill_on_close_job,
 )
-
-
-# MARK: Helpers
-# ------------------------------------------------
-
-
-def _is_console_handle(fd: int) -> bool:
-  """Return True iff *fd* is backed by a real Windows console."""
-
-  try:
-    import msvcrt  # noqa: PLC0415  — Windows-only, imported lazily
-
-    handle = msvcrt.get_osfhandle(fd)  # pyright: ignore[reportAttributeAccessIssue]
-    mode = ctypes.c_uint32()
-    get_console_mode = getattr(_Const.KERNEL32, "GetConsoleMode", None)
-
-    if get_console_mode is not None:
-      return bool(get_console_mode(handle, ctypes.byref(mode)))
-
-    return False
-
-  except (OSError, ValueError, ImportError):
-    return False
-
-
-def _stdin_is_console() -> bool:
-  """Return True iff stdin is a real Windows console (not a pipe / redirection)."""
-
-  if not _Const.IS_WINDOWS:
-    return False
-
-  try:
-    return _is_console_handle(sys.stdin.fileno())
-
-  except (OSError, ValueError, AttributeError):
-    return False
-
-
-def _stdout_is_console() -> bool:
-  """Return True iff stdout is a real Windows console."""
-
-  if not _Const.IS_WINDOWS:
-    return False
-
-  try:
-    return _is_console_handle(sys.stdout.fileno())
-
-  except (OSError, ValueError, AttributeError):
-    return False
-
-
-# ------------------------------------------------
-
-
-def _print_captured_block(title: str, data: str | None) -> None:
-  """Print one captured output block with stable surrounding blank lines."""
-
-  print(title)
-  print()
-
-  if data:
-    print(data, end="")
-
-    if not data.endswith("\n"):
-      print()
-
-  print()
-
-
-# ------------------------------------------------
-
-
-def _captured_text(data: bytes | str | None) -> str | None:
-  """Return captured subprocess data as text."""
-
-  if isinstance(data, bytes):
-    return data.decode("utf-8", errors="backslashreplace")
-
-  return data
 
 
 # MARK: Public API
@@ -152,8 +75,8 @@ def run_command(
       _Const.IS_WINDOWS
       and not capture_output
       and not no_output
-      and _stdin_is_console()
-      and _stdout_is_console()
+      and stdin_is_console()
+      and stdout_is_console()
     ):
       winpty = shutil.which("winpty")
 
@@ -193,19 +116,17 @@ def run_command(
     timer.start()
 
     if capture_output and not no_output:
-      stdout_data, stderr_data = process.communicate()
+      stream_captured_output(
+        cast(TextIO, process.stdout),
+        cast(TextIO, process.stderr),
+      )
+      process.wait()
 
     else:
       process.wait()
-      stdout_data = None
-      stderr_data = None
 
     timer.cancel()
     timer.join()
-
-    if capture_output and not no_output:
-      _print_captured_block("Err:", _captured_text(stderr_data))
-      _print_captured_block("Out:", _captured_text(stdout_data))
 
     return process.returncode
 

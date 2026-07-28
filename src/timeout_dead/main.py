@@ -46,6 +46,16 @@ def _has_priority_option(argv: list[str], options: tuple[str, ...]) -> bool:
 # ------------------------------------------------
 
 
+def _write_stdout(text: str) -> None:
+  """Write text directly to stdout and flush immediately."""
+
+  sys.stdout.write(text)
+  sys.stdout.flush()
+
+
+# ------------------------------------------------
+
+
 # MARK: Public API
 # ------------------------------------------------
 
@@ -145,15 +155,11 @@ def main(argv: list[str] | None = None) -> None:
     capture_output = False
 
   if not args.no_output:
-    print(f"Running: {command_string}")
-    print(f"Timeout: {args.sec} seconds")
-    print()
+    _write_stdout(f"Running: {command_string}\n")
+    _write_stdout(f"Timeout: {args.sec} seconds\n\n")
 
     if not capture_output:
-      print("Out:")
-      print()
-
-    sys.stdout.flush()
+      _write_stdout("Out:\n\n")
 
   return_code = run_command(
     command_string,
@@ -165,11 +171,9 @@ def main(argv: list[str] | None = None) -> None:
 
   if not args.no_output:
     if not capture_output:
-      print()
-      sys.stdout.flush()
+      _write_stdout("\n")
 
-    print(f"Exit code: {return_code}\n")
-    sys.stdout.flush()
+    _write_stdout(f"Exit code: {return_code}\n\n")
 
   sys.exit(return_code)
 

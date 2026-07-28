@@ -2,6 +2,7 @@
 
 import os
 import re
+import shlex
 import shutil
 import signal
 import subprocess
@@ -681,43 +682,81 @@ class TestIntegration:
     assert result.stdout == expected_stdout
     assert _Const.SEPARATOR not in result.stdout
     assert "Err:" not in result.stdout
+    assert "Out:" in result.stdout
 
   # ------------------------------------------------
 
-  def test_cli_capture_output_formats_streams(self) -> None:
-    command = "printf 'alpha-capture\\n'; printf 'beta-capture\\n' >&2"
+  def test_cli_capture_output_formats_stdout_stream(self) -> None:
+    command = "printf 'alpha-capture\\n'"
     result = _run_cli("--capture-output", command)
     expected_stdout = (
       f"Running: {command}\n"
       "Timeout: 60.0 seconds\n"
       "\n"
       "Err:\n\n"
-      "beta-capture\n\n"
       "Out:\n\n"
       "alpha-capture\n\n"
       "Exit code: 0\n\n"
     )
     assert result.returncode == 0
     assert result.stdout == expected_stdout
+
+  # ------------------------------------------------
+
+  def test_cli_capture_output_formats_stderr_stream(self) -> None:
+    command = "printf 'beta-capture\\n' >&2"
+    result = _run_cli("--capture-output", command)
+    assert result.returncode == 0
+    assert "Err:\n\nbeta-capture" in result.stdout
+    assert "Out:" in result.stdout
     assert "beta-capture" not in result.stderr
 
   # ------------------------------------------------
 
   def test_cli_capture_output_formats_streams_without_trailing_newline(self) -> None:
-    command = "printf 'alpha-capture'; printf 'beta-capture' >&2"
+    command = "printf 'alpha-capture'"
     result = _run_cli("--capture-output", command)
     expected_stdout = (
       f"Running: {command}\n"
       "Timeout: 60.0 seconds\n"
       "\n"
       "Err:\n\n"
-      "beta-capture\n\n"
       "Out:\n\n"
       "alpha-capture\n\n"
       "Exit code: 0\n\n"
     )
     assert result.returncode == 0
     assert result.stdout == expected_stdout
+
+  # ------------------------------------------------
+
+  def test_cli_capture_output_streams_before_process_exit(self) -> None:
+    command = (
+      'python -c "import time; '
+      "print('first-stream', flush=True); "
+      "time.sleep(1); "
+      "print('second-stream', flush=True)\""
+    )
+    process = subprocess.Popen(
+      [sys.executable, "-m", "timeout_dead.main", "--capture-output", command],
+      stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE,
+      text=True,
+    )
+    assert process.stdout is not None
+    first_seen = False
+
+    for line in process.stdout:
+      if "first-stream" in line:
+        first_seen = True
+
+        break
+
+    assert first_seen is True
+    assert process.poll() is None
+    stdout, stderr = process.communicate(timeout=10)
+    assert "second-stream" in stdout
+    assert "UnicodeDecodeError" not in stderr
 
   # ------------------------------------------------
 
@@ -742,6 +781,24 @@ class TestIntegration:
     assert result.returncode == 0
     assert "UnicodeDecodeError" not in result.stderr
     assert "\\x98" in result.stdout
+
+  # ------------------------------------------------
+
+  def test_cli_capture_output_runs_example_script(self) -> None:
+    script_path = Path(__file__).with_name("example_script.py")
+    command = (
+      f"{shlex.quote(Path(sys.executable).as_posix())} {shlex.quote(script_path.as_posix())}"
+    )
+    result = _run_cli("--capture-output", command, timeout=15)
+    assert result.returncode == 0
+    assert "Err:" in result.stdout
+    assert "Out:" in result.stdout
+    assert "STDOUT: first line" in result.stdout
+    assert "STDOUT: final line" in result.stdout
+    assert "STDERR: first line" in result.stdout
+    assert "STDERR: final line" in result.stdout
+    assert "EXAMPLE: stdout/stderr capture demo finished" in result.stdout
+    assert "UnicodeDecodeError" not in result.stderr
 
 
 # MARK: Constants tests

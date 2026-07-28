@@ -51,8 +51,11 @@ timeout-dead --signal INT --sec 30 "long-running-server"
 # Run silently — suppress all normal output
 timeout-dead --no-output "curl -s https://example.com"
 
-# Capture stderr/stdout and print them as labeled blocks
+# Capture stderr/stdout and print them as labeled live blocks
 timeout-dead --capture-output "git diff --stat"
+
+# Run the bundled stdout/stderr demo script with live capture
+time-d --capture-output "python tests/example_script.py"
 ```
 
 ## Usage
@@ -75,7 +78,20 @@ options:
   -c, --capture-output  capture and format stdout/stderr blocks
 ```
 
-Visible output format:
+Default output format:
+
+```text
+Running: git status --short --branch
+Timeout: 60.0 seconds
+
+Out:
+
+<command output>
+
+Exit code: 0
+```
+
+Captured output format (`--capture-output`):
 
 ```text
 Running: git status --short --branch
@@ -90,6 +106,22 @@ Out:
 <stdout text>
 
 Exit code: 0
+```
+
+In capture mode, `timeout-dead` reads stdout and stderr concurrently while the command is
+still running. When stdout is an interactive terminal, the `Err:` and `Out:` blocks are
+redrawn live. When stdout is redirected or captured by CI/test tools, output stays plain
+text with no ANSI control sequences.
+
+The default mode intentionally does not capture streams. It inherits the terminal handles
+so interactive and TUI programs such as `vim`, `less`, REPLs, Gradle progress output, and
+similar tools continue to behave normally. Use `--capture-output` only when you need
+separated stdout/stderr blocks in logs or tests.
+
+To see a longer mixed stdout/stderr example locally:
+
+```bash
+time-d --capture-output "python tests/example_script.py"
 ```
 
 Flag priority:
@@ -123,7 +155,7 @@ uses the native termination strategy:
 | ------- | --------------------------- | ------------------ | -------------------------- |
 | Linux   | `setsid()` process group    | `SIGTERM`          | `SIGKILL` via `killpg()`   |
 | macOS   | `setsid()` process group    | `SIGTERM`          | `SIGKILL` via `killpg()`   |
-| Windows | Job Object (`kernel32.dll`) | `CTRL_BREAK_EVENT` | `CloseHandle()` kills tree |
+| Windows | Job Object (`kernel32.dll`) | `CTRL_BREAK_EVENT` | `taskkill /T /F` + Job close |
 
 Tested on all three platforms in CI.
 
