@@ -19,7 +19,7 @@ def _format_output_block(title: str, text: str) -> str:
   block += text
 
   if text.endswith(_Const.NEWLINE):
-    return f"{block}{_Const.NEWLINE}"
+    return f"{block}{_Const.BLANK_LINE}"
 
   return f"{block}{_Const.BLANK_LINE}"
 

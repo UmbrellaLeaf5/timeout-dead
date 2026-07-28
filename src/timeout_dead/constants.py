@@ -174,8 +174,10 @@ class _Const:
   STREAM_READ_SIZE: int = 1
 
   # Windows console APIs
+  MSVCRT_MODULE: str = "msvcrt"
   GET_CONSOLE_MODE: str = "GetConsoleMode"
   SET_CONSOLE_MODE: str = "SetConsoleMode"
+  GET_OSF_HANDLE: str = "get_osfhandle"
 
   try:
     PROJECT_VERSION = _get_version(PROJECT_PACKAGE_NAME)

@@ -1,6 +1,7 @@
 """Terminal control helpers for captured output preview."""
 
 import ctypes
+import importlib
 import sys
 
 from timeout_dead.constants import _Const
@@ -46,9 +47,13 @@ def _enable_windows_virtual_terminal() -> bool:
     return True
 
   try:
-    import msvcrt  # noqa: PLC0415  — Windows-only, imported lazily
+    msvcrt = importlib.import_module(_Const.MSVCRT_MODULE)
+    get_osf_handle = getattr(msvcrt, _Const.GET_OSF_HANDLE, None)
 
-    handle = msvcrt.get_osfhandle(sys.stdout.fileno())
+    if get_osf_handle is None:
+      return True
+
+    handle = get_osf_handle(sys.stdout.fileno())
     mode = ctypes.c_uint32()
     get_console_mode = getattr(_Const.KERNEL32, _Const.GET_CONSOLE_MODE, None)
     set_console_mode = getattr(_Const.KERNEL32, _Const.SET_CONSOLE_MODE, None)

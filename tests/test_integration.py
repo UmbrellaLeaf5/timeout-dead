@@ -142,7 +142,9 @@ class TestIntegration:
   def test_cli_default_output_has_no_separator(self) -> None:
     result = run_cli("echo", "hello-flush")
     expected_stdout = (
-      "Running: echo hello-flush\nTimeout: 60.0 seconds\n\nOut:\n\nhello-flush\n\nExit code: 0\n\n"
+      "Running: echo hello-flush\n\n"
+      "Timeout: 60.0 seconds\n\n\n"
+      "Out:\n\nhello-flush\n\nExit code: 0\n\n"
     )
     assert result.returncode == 0
     assert result.stdout == expected_stdout
@@ -157,11 +159,12 @@ class TestIntegration:
     result = run_cli("--capture-output", command)
     expected_stdout = (
       f"Running: {command}\n"
-      "Timeout: 60.0 seconds\n"
       "\n"
+      "Timeout: 60.0 seconds\n"
+      "\n\n"
       "Err:\n\n"
       "Out:\n\n"
-      "alpha-capture\n\n"
+      "alpha-capture\n\n\n"
       "Exit code: 0\n\n"
     )
     assert result.returncode == 0
@@ -184,8 +187,9 @@ class TestIntegration:
     result = run_cli("--capture-output", command)
     expected_stdout = (
       f"Running: {command}\n"
-      "Timeout: 60.0 seconds\n"
       "\n"
+      "Timeout: 60.0 seconds\n"
+      "\n\n"
       "Err:\n\n"
       "Out:\n\n"
       "alpha-capture\n\n"

@@ -35,8 +35,10 @@ def main(argv: list[str] | None = None) -> None:
     capture_output = False
 
   if not args.no_output:
-    write_stdout(f"{_Const.RUNNING_TITLE}: {command_string}{_Const.NEWLINE}")
-    write_stdout(f"{_Const.TIMEOUT_TITLE}: {args.sec} {_Const.TIMEOUT_UNIT}{_Const.BLANK_LINE}")
+    write_stdout(f"{_Const.RUNNING_TITLE}: {command_string}{_Const.BLANK_LINE}")
+    write_stdout(
+      f"{_Const.TIMEOUT_TITLE}: {args.sec} {_Const.TIMEOUT_UNIT}{_Const.BLANK_LINE}{_Const.NEWLINE}"
+    )
 
     if not capture_output:
       write_stdout(f"{_Const.STDOUT_TITLE}{_Const.BLANK_LINE}")
