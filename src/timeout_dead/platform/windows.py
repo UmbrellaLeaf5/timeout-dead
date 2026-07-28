@@ -1,10 +1,10 @@
-"""Windows platform detection and Job Object helpers."""
+"""Windows Job Object helpers."""
 
 import ctypes
 from ctypes.wintypes import HANDLE
 
-from timeout_dead._structs import JOBOBJECT_EXTENDED_LIMIT_INFORMATION
 from timeout_dead.constants import _Const
+from timeout_dead.platform.structs import JOBOBJECT_EXTENDED_LIMIT_INFORMATION
 
 
 # MARK: Job Object (process tree force-kill)
@@ -23,7 +23,9 @@ def create_kill_on_close_job() -> HANDLE | None:
     return None
 
   info = JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
-  info.BasicLimitInformation[1] = _Const.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+  info.BasicLimitInformation[_Const.JOB_OBJECT_BASIC_LIMIT_INFORMATION_INDEX] = (
+    _Const.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+  )
 
   ok = _Const.KERNEL32.SetInformationJobObject(
     job,

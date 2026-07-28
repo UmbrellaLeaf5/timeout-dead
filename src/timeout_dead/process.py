@@ -1,7 +1,6 @@
 """Process termination and signal handling."""
 
 import os
-import shutil
 import signal
 import subprocess
 import sys
@@ -9,31 +8,7 @@ import time
 from ctypes.wintypes import HANDLE
 
 from timeout_dead.constants import _Const
-from timeout_dead.win32 import close_job
-
-
-# MARK: Bash detection
-# ------------------------------------------------
-
-
-def find_bash() -> str:
-  """
-  Locate bash executable in PATH.
-
-  Returns:
-    str: path to the bash executable
-
-  Raises:
-    SystemExit: if bash is not found
-  """
-
-  bash_path = shutil.which("bash")
-
-  if bash_path is None:
-    print(f"\n{_Const.MSG_BASH_NOT_FOUND}", file=sys.stderr)
-    sys.exit(1)
-
-  return bash_path
+from timeout_dead.platform.windows import close_job
 
 
 # MARK: Helpers
@@ -45,10 +20,16 @@ def _taskkill_tree(pid: int) -> None:
 
   try:
     subprocess.run(
-      ["taskkill", "/T", "/F", "/PID", str(pid)],
+      [
+        _Const.TASKKILL_EXECUTABLE,
+        _Const.TASKKILL_TREE_FLAG,
+        _Const.TASKKILL_FORCE_FLAG,
+        _Const.TASKKILL_PID_FLAG,
+        str(pid),
+      ],
       capture_output=True,
       check=False,
-      timeout=5,
+      timeout=_Const.TASKKILL_TIMEOUT_S,
     )
 
   except (OSError, subprocess.TimeoutExpired):
@@ -77,11 +58,11 @@ def terminate_process(
         # between Popen and AssignProcessToJobObject).
         _taskkill_tree(process.pid)
 
-        job_handle: HANDLE | None = getattr(process, "_job_handle", None)
+        job_handle: HANDLE | None = getattr(process, _Const.PROCESS_JOB_HANDLE_ATTR, None)
 
         if job_handle is not None:
           close_job(job_handle)
-          process._job_handle = None  # type: ignore[attr-defined]
+          setattr(process, _Const.PROCESS_JOB_HANDLE_ATTR, None)
 
         # Kill the main process directly (belt).
         try:
@@ -92,20 +73,23 @@ def terminate_process(
 
         return
 
-      elif signal_num == signal.SIGINT:
-        process.send_signal(getattr(signal, "CTRL_C_EVENT", signal.SIGINT))
-
-      else:
-        process.send_signal(getattr(signal, "CTRL_BREAK_EVENT", signal.SIGTERM))
+      windows_signal_map: dict[int | None, int] = {
+        signal.SIGINT: getattr(signal, _Const.WINDOWS_CTRL_C_EVENT, signal.SIGINT),
+      }
+      process.send_signal(
+        windows_signal_map.get(
+          signal_num,
+          getattr(signal, _Const.WINDOWS_CTRL_BREAK_EVENT, signal.SIGTERM),
+        )
+      )
 
     else:
       pgid = os.getpgid(process.pid)  # pyright: ignore[reportAttributeAccessIssue]
 
-      if signal_num is None:
-        os.killpg(pgid, signal.SIGKILL)  # pyright: ignore[reportAttributeAccessIssue]
-
-      else:
-        os.killpg(pgid, signal_num)  # pyright: ignore[reportAttributeAccessIssue]
+      unix_signal = (
+        getattr(signal, _Const.UNIX_SIGKILL, signal.SIGTERM) if signal_num is None else signal_num
+      )
+      os.killpg(pgid, unix_signal)  # pyright: ignore[reportAttributeAccessIssue]
 
   except ProcessLookupError:
     print(

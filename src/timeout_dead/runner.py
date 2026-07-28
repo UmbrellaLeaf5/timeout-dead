@@ -10,14 +10,15 @@ from ctypes.wintypes import HANDLE
 from typing import TextIO, cast
 
 from timeout_dead.capture import stream_captured_output
-from timeout_dead.console import stdin_is_console, stdout_is_console
 from timeout_dead.constants import _Const
-from timeout_dead.process import find_bash, kill_with_timeout, terminate_process
-from timeout_dead.win32 import (
+from timeout_dead.platform.console import stdin_is_console, stdout_is_console
+from timeout_dead.platform.windows import (
   assign_process_to_job,
   close_job,
   create_kill_on_close_job,
 )
+from timeout_dead.process import kill_with_timeout, terminate_process
+from timeout_dead.shell import find_bash
 
 
 # MARK: Public API
@@ -27,7 +28,7 @@ from timeout_dead.win32 import (
 def run_command(
   command_string: str,
   timeout: float = _Const.DEFAULT_TIMEOUT_S,
-  signal_name: str = "TERM",
+  signal_name: str = _Const.DEFAULT_SIGNAL_NAME,
   no_output: bool = False,
   capture_output: bool = False,
 ) -> int:
@@ -58,34 +59,37 @@ def run_command(
     # possible.
     job_handle = create_kill_on_close_job()
 
-    creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if _Const.IS_WINDOWS else 0
+    creationflags = (
+      getattr(subprocess, _Const.CREATE_NEW_PROCESS_GROUP, _Const.NO_FLAGS)
+      if _Const.IS_WINDOWS
+      else _Const.NO_FLAGS
+    )
 
+    capture_enabled = capture_output and not no_output
     stdin: int | None = subprocess.DEVNULL if no_output else None
-    cmd: list[str] = [find_bash(), "-c", command_string]
-
-    if capture_output and not no_output:
-      stdout_target: int | None = subprocess.PIPE
-      stderr_target: int | None = subprocess.PIPE
-
-    else:
-      stdout_target = subprocess.DEVNULL if no_output else None
-      stderr_target = subprocess.DEVNULL if no_output else None
+    cmd: list[str] = [find_bash(), _Const.BASH_COMMAND_FLAG, command_string]
+    output_target: int | None = subprocess.DEVNULL if no_output else None
+    stdout_target: int | None = subprocess.PIPE if capture_enabled else output_target
+    stderr_target: int | None = subprocess.PIPE if capture_enabled else output_target
 
     if (
       _Const.IS_WINDOWS
-      and not capture_output
+      and not capture_enabled
       and not no_output
       and stdin_is_console()
       and stdout_is_console()
     ):
-      winpty = shutil.which("winpty")
+      winpty = shutil.which(_Const.WINPTY_EXECUTABLE)
 
       if winpty is not None:
-        cmd = [winpty, "--", *cmd]
+        cmd = [winpty, _Const.WINPTY_SEPARATOR, *cmd]
 
       else:
         try:
-          con_in_fd = os.open("CONIN$", os.O_RDONLY | getattr(os, "O_BINARY", 0))
+          con_in_fd = os.open(
+            _Const.WINDOWS_CONSOLE_INPUT,
+            os.O_RDONLY | getattr(os, _Const.WINDOWS_BINARY_FLAG, _Const.NO_FLAGS),
+          )
           stdin = con_in_fd
 
         except OSError:
@@ -97,15 +101,17 @@ def run_command(
       stdout=stdout_target,
       stderr=stderr_target,
       text=capture_output,
-      encoding="utf-8" if capture_output else None,
-      errors="backslashreplace" if capture_output else None,
+      encoding=_Const.SUBPROCESS_ENCODING if capture_output else None,
+      errors=_Const.SUBPROCESS_ERRORS if capture_output else None,
       creationflags=creationflags,
-      preexec_fn=getattr(os, "setpgrp", None) if not _Const.IS_WINDOWS else None,
+      preexec_fn=(
+        getattr(os, _Const.UNIX_SET_PROCESS_GROUP, None) if not _Const.IS_WINDOWS else None
+      ),
     )
 
     if job_handle is not None:
       assign_process_to_job(job_handle, process.pid)
-      process._job_handle = job_handle  # type: ignore[attr-defined]
+      setattr(process, _Const.PROCESS_JOB_HANDLE_ATTR, job_handle)
 
     timer = threading.Timer(
       timeout,
@@ -115,15 +121,13 @@ def run_command(
 
     timer.start()
 
-    if capture_output and not no_output:
+    if capture_enabled:
       stream_captured_output(
         cast(TextIO, process.stdout),
         cast(TextIO, process.stderr),
       )
-      process.wait()
 
-    else:
-      process.wait()
+    process.wait()
 
     timer.cancel()
     timer.join()
@@ -140,7 +144,7 @@ def run_command(
 
     print(f"{_Const.msg_exec_error(e)}", file=sys.stderr)
 
-    return -1
+    return _Const.EXEC_ERROR_RETURN_CODE
 
   finally:
     if con_in_fd is not None:

@@ -18,7 +18,7 @@ def _is_console_handle(fd: int) -> bool:
 
     handle = msvcrt.get_osfhandle(fd)  # pyright: ignore[reportAttributeAccessIssue]
     mode = ctypes.c_uint32()
-    get_console_mode = getattr(_Const.KERNEL32, "GetConsoleMode", None)
+    get_console_mode = getattr(_Const.KERNEL32, _Const.GET_CONSOLE_MODE, None)
 
     if get_console_mode is not None:
       return bool(get_console_mode(handle, ctypes.byref(mode)))
