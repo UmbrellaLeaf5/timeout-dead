@@ -4,6 +4,7 @@ import ctypes
 import shutil
 import sys
 import threading
+import time
 from queue import Queue
 from typing import TextIO
 
@@ -15,7 +16,10 @@ from timeout_dead.constants import _Const
 
 
 TAIL_LINE_COUNT = 5
+LIVE_RENDER_INTERVAL_S = 0.05
 ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
+HIDE_CURSOR = "\x1b[?25l"
+SHOW_CURSOR = "\x1b[?25h"
 
 
 # MARK: Helpers
@@ -27,6 +31,24 @@ def _write_stdout(text: str) -> None:
 
   sys.stdout.write(text)
   sys.stdout.flush()
+
+
+# ------------------------------------------------
+
+
+def _hide_cursor() -> None:
+  """Hide the terminal cursor during live preview redraws."""
+
+  _write_stdout(HIDE_CURSOR)
+
+
+# ------------------------------------------------
+
+
+def _show_cursor() -> None:
+  """Restore the terminal cursor after live preview redraws."""
+
+  _write_stdout(SHOW_CURSOR)
 
 
 # ------------------------------------------------
@@ -180,6 +202,18 @@ def _supports_live_preview() -> bool:
 # ------------------------------------------------
 
 
+def _should_render_live_tail(chunk: str, last_render_time: float) -> bool:
+  """Return True when the live preview should be redrawn."""
+
+  if chunk in {"\n", "\r"}:
+    return True
+
+  return time.monotonic() - last_render_time >= LIVE_RENDER_INTERVAL_S
+
+
+# ------------------------------------------------
+
+
 def _format_output_block(title: str, text: str) -> str:
   """Format one final captured output block."""
 
@@ -248,31 +282,38 @@ def _collect_captured_output(
   stdout_text = ""
   rendered_lines = 0
   finished_count = 0
+  last_render_time = 0.0
 
   if live_preview:
+    _hide_cursor()
     rendered_lines = _render_live_tail(stderr_text, stdout_text, rendered_lines)
+    last_render_time = time.monotonic()
 
-  while finished_count < thread_count:
-    title, chunk = output_queue.get()
+  try:
+    while finished_count < thread_count:
+      title, chunk = output_queue.get()
 
-    if chunk is None:
-      finished_count += 1
+      if chunk is None:
+        finished_count += 1
 
-      continue
+        continue
 
-    if title == "Err:":
-      stderr_text += chunk
+      if title == "Err:":
+        stderr_text += chunk
 
-    else:
-      stdout_text += chunk
+      else:
+        stdout_text += chunk
 
+      if live_preview and _should_render_live_tail(chunk, last_render_time):
+        rendered_lines = _render_live_tail(stderr_text, stdout_text, rendered_lines)
+        last_render_time = time.monotonic()
+
+    return stderr_text, stdout_text
+
+  finally:
     if live_preview:
-      rendered_lines = _render_live_tail(stderr_text, stdout_text, rendered_lines)
-
-  if live_preview:
-    _clear_live_tail(rendered_lines)
-
-  return stderr_text, stdout_text
+      _clear_live_tail(rendered_lines)
+      _show_cursor()
 
 
 # MARK: Public API

@@ -10,6 +10,7 @@ import sys
 import textwrap
 import time
 from pathlib import Path
+from queue import Queue
 
 import pytest
 
@@ -486,6 +487,56 @@ class TestCaptureRendering:
 
     for line in block.splitlines():
       assert len(line) <= 12
+
+  # ------------------------------------------------
+
+  def test_live_preview_throttles_character_redraws(
+    self,
+    monkeypatch: pytest.MonkeyPatch,
+  ) -> None:
+    output_queue: Queue[tuple[str, str | None]] = Queue()
+
+    for char in "abcdef":
+      output_queue.put(("Out:", char))
+
+    output_queue.put(("Out:", None))
+    output_queue.put(("Err:", None))
+
+    writes: list[str] = []
+    monkeypatch.setattr(capture, "_write_stdout", writes.append)
+    monkeypatch.setattr(capture.time, "monotonic", lambda: 1.0)
+    stderr_text, stdout_text = capture._collect_captured_output(
+      output_queue,
+      2,
+      live_preview=True,
+    )
+    redraw_count = sum("Err:\n\n" in write for write in writes)
+    assert stderr_text == ""
+    assert stdout_text == "abcdef"
+    assert redraw_count == 1
+    assert capture.HIDE_CURSOR in writes
+    assert writes[-1] == capture.SHOW_CURSOR
+
+  # ------------------------------------------------
+
+  def test_live_preview_restores_cursor_after_error(
+    self,
+    monkeypatch: pytest.MonkeyPatch,
+  ) -> None:
+    output_queue: Queue[tuple[str, str | None]] = Queue()
+    writes: list[str] = []
+    monkeypatch.setattr(capture, "_write_stdout", writes.append)
+    monkeypatch.setattr(output_queue, "get", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
+
+    with pytest.raises(RuntimeError):
+      capture._collect_captured_output(
+        output_queue,
+        2,
+        live_preview=True,
+      )
+
+    assert capture.HIDE_CURSOR in writes
+    assert writes[-1] == capture.SHOW_CURSOR
 
 
 # MARK: Main tests
