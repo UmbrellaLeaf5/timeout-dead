@@ -102,7 +102,7 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     "--capture-output",
     action="store_true",
     default=False,
-    help="capture and format stdout/stderr with separators (default: interactive mode)",
+    help="capture and format stdout/stderr blocks (default: interactive mode)",
   )
 
   parser.add_argument(
@@ -147,13 +147,13 @@ def main(argv: list[str] | None = None) -> None:
   if not args.no_output:
     print(f"Running: {command_string}")
     print(f"Timeout: {args.sec} seconds")
+    print()
 
-    print(_Const.SEPARATOR)
-    sys.stdout.flush()
-
-    if capture_output:
+    if not capture_output:
+      print("Out:")
       print()
-      sys.stdout.flush()
+
+    sys.stdout.flush()
 
   return_code = run_command(
     command_string,
@@ -164,12 +164,9 @@ def main(argv: list[str] | None = None) -> None:
   )
 
   if not args.no_output:
-    if capture_output:
+    if not capture_output:
       print()
       sys.stdout.flush()
-
-    print(_Const.SEPARATOR)
-    sys.stdout.flush()
 
     print(f"Exit code: {return_code}\n")
     sys.stdout.flush()

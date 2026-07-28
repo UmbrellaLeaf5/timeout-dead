@@ -67,6 +67,36 @@ def _stdout_is_console() -> bool:
     return False
 
 
+# ------------------------------------------------
+
+
+def _print_captured_block(title: str, data: str | None) -> None:
+  """Print one captured output block with stable surrounding blank lines."""
+
+  print(title)
+  print()
+
+  if data:
+    print(data, end="")
+
+    if not data.endswith("\n"):
+      print()
+
+  print()
+
+
+# ------------------------------------------------
+
+
+def _captured_text(data: bytes | str | None) -> str | None:
+  """Return captured subprocess data as text."""
+
+  if isinstance(data, bytes):
+    return data.decode("utf-8", errors="backslashreplace")
+
+  return data
+
+
 # MARK: Public API
 # ------------------------------------------------
 
@@ -174,15 +204,8 @@ def run_command(
     timer.join()
 
     if capture_output and not no_output:
-      if stderr_data:
-        print(stderr_data, end="")
-
-      print()
-      print(_Const.SEPARATOR)
-      print()
-
-      if stdout_data:
-        print(stdout_data, end="")
+      _print_captured_block("Err:", _captured_text(stderr_data))
+      _print_captured_block("Out:", _captured_text(stdout_data))
 
     return process.returncode
 

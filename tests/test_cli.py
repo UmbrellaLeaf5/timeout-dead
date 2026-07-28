@@ -672,15 +672,15 @@ class TestIntegration:
 
   # ------------------------------------------------
 
-  def test_cli_output_between_separators(self) -> None:
+  def test_cli_default_output_has_no_separator(self) -> None:
     result = _run_cli("echo", "hello-flush")
+    expected_stdout = (
+      "Running: echo hello-flush\nTimeout: 60.0 seconds\n\nOut:\n\nhello-flush\n\nExit code: 0\n\n"
+    )
     assert result.returncode == 0
-    parts = result.stdout.split(_Const.SEPARATOR)
-    assert len(parts) == 3
-    assert "Running:" in parts[0]
-    assert "Timeout:" in parts[0]
-    assert "hello-flush" in parts[1]
-    assert "Exit code:" in parts[2]
+    assert result.stdout == expected_stdout
+    assert _Const.SEPARATOR not in result.stdout
+    assert "Err:" not in result.stdout
 
   # ------------------------------------------------
 
@@ -690,16 +690,34 @@ class TestIntegration:
     expected_stdout = (
       f"Running: {command}\n"
       "Timeout: 60.0 seconds\n"
-      f"{_Const.SEPARATOR}\n\n"
+      "\n"
+      "Err:\n\n"
       "beta-capture\n\n"
-      f"{_Const.SEPARATOR}\n\n"
+      "Out:\n\n"
       "alpha-capture\n\n"
-      f"{_Const.SEPARATOR}\n"
       "Exit code: 0\n\n"
     )
     assert result.returncode == 0
     assert result.stdout == expected_stdout
     assert "beta-capture" not in result.stderr
+
+  # ------------------------------------------------
+
+  def test_cli_capture_output_formats_streams_without_trailing_newline(self) -> None:
+    command = "printf 'alpha-capture'; printf 'beta-capture' >&2"
+    result = _run_cli("--capture-output", command)
+    expected_stdout = (
+      f"Running: {command}\n"
+      "Timeout: 60.0 seconds\n"
+      "\n"
+      "Err:\n\n"
+      "beta-capture\n\n"
+      "Out:\n\n"
+      "alpha-capture\n\n"
+      "Exit code: 0\n\n"
+    )
+    assert result.returncode == 0
+    assert result.stdout == expected_stdout
 
   # ------------------------------------------------
 

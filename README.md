@@ -51,7 +51,7 @@ timeout-dead --signal INT --sec 30 "long-running-server"
 # Run silently — suppress all normal output
 timeout-dead --no-output "curl -s https://example.com"
 
-# Capture stderr/stdout and print them in separated blocks
+# Capture stderr/stdout and print them as labeled blocks
 timeout-dead --capture-output "git diff --stat"
 ```
 
@@ -72,7 +72,24 @@ options:
   --sec SECONDS         timeout in seconds (default: 60.0, accepts floats)
   --signal SIGNAL       signal to send on timeout (TERM, KILL, HUP, INT)
   --no-output           suppress normal output and override --capture-output
-  -c, --capture-output  capture and format stdout/stderr with separators
+  -c, --capture-output  capture and format stdout/stderr blocks
+```
+
+Visible output format:
+
+```text
+Running: git status --short --branch
+Timeout: 60.0 seconds
+
+Err:
+
+<stderr text>
+
+Out:
+
+<stdout text>
+
+Exit code: 0
 ```
 
 Flag priority:
