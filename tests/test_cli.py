@@ -457,16 +457,22 @@ class TestNoOutput:
 
 
 class TestCaptureRendering:
-  def test_preview_block_keeps_next_title_on_separate_line(self) -> None:
-    err_block = capture._format_preview_block("Err:", "err-without-newline", 80)
-    out_block = capture._format_preview_block("Out:", "out-without-newline", 80)
-    assert f"{err_block}{out_block}" == (
-      "Err:\n\nerr-without-newline\n\nOut:\n\nout-without-newline\n\n"
+  def test_preview_frame_keeps_titles_on_separate_lines(self) -> None:
+    frame = capture._format_preview_frame(
+      "err-without-newline",
+      "out-without-newline",
+      80,
     )
+    lines = frame.splitlines()
+    assert lines[0] == f"Err:{capture.CLEAR_LINE}"
+    assert lines[2] == f"err-without-newline{capture.CLEAR_LINE}"
+    assert lines[8] == f"Out:{capture.CLEAR_LINE}"
+    assert lines[10] == f"out-without-newline{capture.CLEAR_LINE}"
+    assert len(lines) == capture.PREVIEW_FRAME_LINES
 
   # ------------------------------------------------
 
-  def test_preview_block_limits_tail_lines_and_width(self) -> None:
+  def test_preview_frame_limits_tail_lines_and_width(self) -> None:
     text = "\n".join(
       [
         "line-1",
@@ -478,15 +484,30 @@ class TestCaptureRendering:
         "line-7-with-long-suffix",
       ]
     )
-    block = capture._format_preview_block("Err:", text, 12)
-    assert "line-1" not in block
-    assert "line-2" not in block
-    assert "line-3" in block
-    assert "line-6" in block
-    assert "line-7-wi..." in block
+    frame = capture._format_preview_frame(text, "", 12)
+    assert "line-1" not in frame
+    assert "line-2" not in frame
+    assert "line-3" in frame
+    assert "line-6" in frame
+    assert "line-7-wi..." in frame
+    assert "\x1b[J" not in frame
 
-    for line in block.splitlines():
-      assert len(line) <= 12
+    for line in frame.splitlines():
+      assert len(line.removesuffix(capture.CLEAR_LINE)) <= 12
+
+  # ------------------------------------------------
+
+  def test_live_preview_redraw_uses_one_atomic_write(
+    self,
+    monkeypatch: pytest.MonkeyPatch,
+  ) -> None:
+    writes: list[str] = []
+    monkeypatch.setattr(capture, "_write_stdout", writes.append)
+    rendered_lines = capture._render_live_tail("err", "out", capture.PREVIEW_FRAME_LINES)
+    assert rendered_lines == capture.PREVIEW_FRAME_LINES
+    assert len(writes) == 1
+    assert writes[0].startswith(f"\x1b[{capture.PREVIEW_FRAME_LINES}FErr:")
+    assert "\x1b[J" not in writes[0]
 
   # ------------------------------------------------
 
@@ -510,7 +531,7 @@ class TestCaptureRendering:
       2,
       live_preview=True,
     )
-    redraw_count = sum("Err:\n\n" in write for write in writes)
+    redraw_count = sum("Err:" in write for write in writes)
     assert stderr_text == ""
     assert stdout_text == "abcdef"
     assert redraw_count == 1

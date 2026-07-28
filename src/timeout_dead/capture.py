@@ -16,10 +16,12 @@ from timeout_dead.constants import _Const
 
 
 TAIL_LINE_COUNT = 5
+PREVIEW_FRAME_LINES = 16
 LIVE_RENDER_INTERVAL_S = 0.05
 ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
 HIDE_CURSOR = "\x1b[?25l"
 SHOW_CURSOR = "\x1b[?25h"
+CLEAR_LINE = "\x1b[K"
 
 
 # MARK: Helpers
@@ -123,41 +125,47 @@ def _truncate_preview_line(line: str, width: int) -> str:
 # ------------------------------------------------
 
 
-def _format_preview_text(text: str, width: int) -> str:
-  """Format tail preview text with width-limited lines."""
+def _preview_lines(text: str, width: int) -> list[str]:
+  """Return exactly TAIL_LINE_COUNT width-limited preview lines."""
 
   tail = _last_lines(text)
 
   if not tail:
-    return ""
+    lines: list[str] = []
 
-  lines = tail.splitlines()
-  preview = "\n".join(_truncate_preview_line(line, width) for line in lines)
+  else:
+    lines = [_truncate_preview_line(line, width) for line in tail.splitlines()]
 
-  if tail.endswith("\n"):
-    return f"{preview}\n"
-
-  return preview
+  return [*lines[-TAIL_LINE_COUNT:], *("" for _ in range(TAIL_LINE_COUNT - len(lines)))]
 
 
 # ------------------------------------------------
 
 
-def _format_preview_block(title: str, text: str, width: int) -> str:
-  """Format one live preview block with stable spacing."""
+def _format_frame_line(text: str = "") -> str:
+  """Format one preview frame line with clear-to-end."""
 
-  preview = _format_preview_text(text, width)
-  block = f"{title}\n\n"
+  return f"{text}{CLEAR_LINE}"
 
-  if preview:
-    block += preview
 
-    if not preview.endswith("\n"):
-      block += "\n"
+# ------------------------------------------------
 
-    block += "\n"
 
-  return block
+def _format_preview_frame(stderr_text: str, stdout_text: str, width: int) -> str:
+  """Format one fixed-height live preview frame."""
+
+  lines = [
+    _format_frame_line("Err:"),
+    _format_frame_line(),
+    *(_format_frame_line(line) for line in _preview_lines(stderr_text, width)),
+    _format_frame_line(),
+    _format_frame_line("Out:"),
+    _format_frame_line(),
+    *(_format_frame_line(line) for line in _preview_lines(stdout_text, width)),
+    _format_frame_line(),
+  ]
+
+  return "\n".join(lines) + "\n"
 
 
 # ------------------------------------------------
@@ -246,15 +254,12 @@ def _render_final_output(stderr_text: str, stdout_text: str) -> None:
 def _render_live_tail(stderr_text: str, stdout_text: str, rendered_lines: int) -> int:
   """Redraw captured output tail blocks and return rendered line count."""
 
-  if rendered_lines:
-    _write_stdout(f"\x1b[{rendered_lines}F\x1b[J")
-
   width = _terminal_preview_width()
-  rendered = _format_preview_block("Err:", stderr_text, width)
-  rendered += _format_preview_block("Out:", stdout_text, width)
-  _write_stdout(rendered)
+  frame = _format_preview_frame(stderr_text, stdout_text, width)
+  prefix = f"\x1b[{rendered_lines}F" if rendered_lines else ""
+  _write_stdout(f"{prefix}{frame}")
 
-  return rendered.count("\n")
+  return PREVIEW_FRAME_LINES
 
 
 # ------------------------------------------------
@@ -263,8 +268,11 @@ def _render_live_tail(stderr_text: str, stdout_text: str, rendered_lines: int) -
 def _clear_live_tail(rendered_lines: int) -> None:
   """Clear the previously rendered TTY preview."""
 
-  if rendered_lines:
-    _write_stdout(f"\x1b[{rendered_lines}F\x1b[J")
+  if not rendered_lines:
+    return
+
+  blank_frame = "".join(f"{CLEAR_LINE}\n" for _ in range(rendered_lines))
+  _write_stdout(f"\x1b[{rendered_lines}F{blank_frame}\x1b[{rendered_lines}F")
 
 
 # ------------------------------------------------

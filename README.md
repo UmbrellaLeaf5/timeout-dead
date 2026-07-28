@@ -115,9 +115,9 @@ shown, so large output does not scroll the whole screen. After the command exits
 preview is cleared and the complete stderr/stdout text is printed in the final format
 shown above.
 
-The live preview redraw is throttled to reduce flicker on fast character-by-character
-output. The terminal cursor is hidden while the preview is active and restored when the
-command completes, fails, or is interrupted.
+The live preview uses a fixed-height local frame and throttled redraws to reduce flicker
+on fast character-by-character output. The terminal cursor is hidden while the preview is
+active and restored when the command completes, fails, or is interrupted.
 
 When stdout is redirected or captured by CI/test tools, output stays plain text with no
 ANSI control sequences. In that mode, `timeout-dead` prints the same complete final blocks
