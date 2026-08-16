@@ -16,7 +16,8 @@ def _format_output_block(title: str, text: str) -> str:
   if not text:
     return block
 
-  return f"{block}{text}{_Const.BLANK_LINE}"
+  suffix = _Const.BLANK_LINE if text.endswith(_Const.NEWLINE) else _Const.CAPTURE_BLOCK_GAP
+  return f"{block}{text}{suffix}"
 
 
 # ------------------------------------------------

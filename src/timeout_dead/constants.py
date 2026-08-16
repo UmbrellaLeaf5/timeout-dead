@@ -136,7 +136,7 @@ class _Const:
 
   # Captured output preview
   TAIL_LINE_COUNT: int = 5
-  PREVIEW_FRAME_LINES: int = 16
+  PREVIEW_FRAME_LINES: int = 20
   LIVE_RENDER_INTERVAL_S: float = 0.05
   DEFAULT_TERMINAL_COLUMNS: int = 80
   DEFAULT_TERMINAL_LINES: int = 24

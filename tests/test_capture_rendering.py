@@ -5,7 +5,7 @@ from queue import Queue
 import pytest
 
 from timeout_dead import capture
-from timeout_dead.capture import control, preview, stream
+from timeout_dead.capture import control, output, preview, stream
 
 
 # MARK: Capture rendering tests
@@ -21,9 +21,9 @@ class TestCaptureRendering:
     )
     lines = frame.splitlines()
     assert lines[0] == f"Err:{capture.CLEAR_LINE}"
-    assert lines[2] == f"err-without-newline{capture.CLEAR_LINE}"
-    assert lines[8] == f"Out:{capture.CLEAR_LINE}"
-    assert lines[10] == f"out-without-newline{capture.CLEAR_LINE}"
+    assert lines[3] == f"err-without-newline{capture.CLEAR_LINE}"
+    assert lines[10] == f"Out:{capture.CLEAR_LINE}"
+    assert lines[13] == f"out-without-newline{capture.CLEAR_LINE}"
     assert len(lines) == capture.PREVIEW_FRAME_LINES
 
   # ------------------------------------------------
@@ -116,3 +116,55 @@ class TestCaptureRendering:
 
     assert capture.HIDE_CURSOR in writes
     assert writes[-1] == capture.SHOW_CURSOR
+
+
+# MARK: Final output tests
+# ------------------------------------------------
+
+
+class TestFinalOutput:
+  def test_normalizes_gap_after_text_with_trailing_newline(
+    self,
+    monkeypatch: pytest.MonkeyPatch,
+  ) -> None:
+    writes: list[str] = []
+    monkeypatch.setattr(output, "write_stdout", writes.append)
+
+    output.render_final_output("error\n", "result\n")
+
+    assert writes == [
+      "Err:\n\n\nerror\n\n\n",
+      "Out:\n\n\nresult\n\n\n",
+    ]
+
+  # ------------------------------------------------
+
+  def test_normalizes_gap_after_text_without_trailing_newline(
+    self,
+    monkeypatch: pytest.MonkeyPatch,
+  ) -> None:
+    writes: list[str] = []
+    monkeypatch.setattr(output, "write_stdout", writes.append)
+
+    output.render_final_output("error", "result")
+
+    assert writes == [
+      "Err:\n\n\nerror\n\n\n",
+      "Out:\n\n\nresult\n\n\n",
+    ]
+
+  # ------------------------------------------------
+
+  def test_preserves_empty_stderr_block(
+    self,
+    monkeypatch: pytest.MonkeyPatch,
+  ) -> None:
+    writes: list[str] = []
+    monkeypatch.setattr(output, "write_stdout", writes.append)
+
+    output.render_final_output("", "result")
+
+    assert writes == [
+      "Err:\n\n\n",
+      "Out:\n\n\nresult\n\n\n",
+    ]

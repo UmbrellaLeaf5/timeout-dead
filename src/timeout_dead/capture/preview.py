@@ -91,11 +91,15 @@ def format_preview_frame(stderr_text: str, stdout_text: str, width: int) -> str:
   lines = [
     _format_frame_line(_Const.STDERR_TITLE),
     _format_frame_line(),
+    _format_frame_line(),
     *(_format_frame_line(line) for line in _preview_lines(stderr_text, width)),
+    _format_frame_line(),
     _format_frame_line(),
     _format_frame_line(_Const.STDOUT_TITLE),
     _format_frame_line(),
+    _format_frame_line(),
     *(_format_frame_line(line) for line in _preview_lines(stdout_text, width)),
+    _format_frame_line(),
     _format_frame_line(),
   ]
 

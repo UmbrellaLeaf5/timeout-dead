@@ -198,7 +198,7 @@ class TestIntegration:
       "\n\n"
       "Err:\n\n\n"
       "Out:\n\n\n"
-      "alpha-capture\n\n"
+      "alpha-capture\n\n\n"
       "Exit code: 0\n\n"
     )
     assert result.returncode == 0
