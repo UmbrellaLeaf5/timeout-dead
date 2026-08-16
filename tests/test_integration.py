@@ -71,6 +71,7 @@ class TestIntegration:
     result = run_cli("echo", "hello-integration")
     assert result.returncode == 0
     assert "hello-integration" in result.stdout
+    assert "RuntimeWarning" not in result.stderr
 
   # ------------------------------------------------
 
