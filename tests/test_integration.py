@@ -83,7 +83,7 @@ class TestIntegration:
   def test_cli_timeout(self) -> None:
     result = run_cli("--sec", "1", "sleep", "10")
     assert result.returncode != 0
-    assert "Timeout exceeded" in result.stderr
+    assert "Timed out after 1.0 seconds" in result.stderr
 
   # ------------------------------------------------
 
@@ -92,7 +92,8 @@ class TestIntegration:
     assert result.returncode == 0
     assert "secret" not in result.stdout
     assert "Running:" not in result.stdout
-    assert "Exit code" not in result.stdout
+    assert "Exit code: 0" in result.stdout
+    assert _Const.STATUS_SUCCESS in result.stderr
 
   # ------------------------------------------------
 
@@ -112,21 +113,21 @@ class TestIntegration:
   def test_cli_signal_int_timeout(self) -> None:
     result = run_cli("--signal", "INT", "--sec", "1", "sleep", "10")
     assert result.returncode != 0
-    assert "Timeout exceeded" in result.stderr
+    assert "Timed out after 1.0 seconds" in result.stderr
 
   # ------------------------------------------------
 
   def test_cli_signal_hup_timeout(self) -> None:
     result = run_cli("--signal", "HUP", "--sec", "1", "sleep", "10")
     assert result.returncode != 0
-    assert "Timeout exceeded" in result.stderr
+    assert "Timed out after 1.0 seconds" in result.stderr
 
   # ------------------------------------------------
 
   def test_cli_signal_kill_timeout(self) -> None:
     result = run_cli("--signal", "KILL", "--sec", "1", "sleep", "10")
     assert result.returncode != 0
-    assert "Timeout exceeded" in result.stderr
+    assert "Timed out after 1.0 seconds" in result.stderr
 
   # ------------------------------------------------
 
@@ -148,6 +149,8 @@ class TestIntegration:
     )
     assert result.returncode == 0
     assert result.stdout == expected_stdout
+    assert _Const.STATUS_SUCCESS in result.stderr
+    assert _Const.ANSI_GREEN not in result.stderr
     assert "Err:" not in result.stdout
     assert "Out:" in result.stdout
 
@@ -168,6 +171,8 @@ class TestIntegration:
     )
     assert result.returncode == 0
     assert result.stdout == expected_stdout
+    assert _Const.STATUS_SUCCESS in result.stderr
+    assert _Const.ANSI_GREEN not in result.stderr
 
   # ------------------------------------------------
 
@@ -221,8 +226,9 @@ class TestIntegration:
     command = "printf 'alpha-capture\n'; printf 'beta-capture\n' >&2"
     result = run_cli("--no-output", "--capture-output", command)
     assert result.returncode == 0
-    assert result.stdout == ""
+    assert result.stdout == "Exit code: 0\n\n"
     assert _Const.MSG_CAPTURE_IGNORED in result.stderr
+    assert _Const.STATUS_SUCCESS in result.stderr
     assert "alpha-capture" not in result.stderr
     assert "beta-capture" not in result.stderr
 

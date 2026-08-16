@@ -58,6 +58,7 @@ class TestMain:
     captured = capsys.readouterr()
     assert exc_info.value.code == 0
     assert "hello" in captured.out
+    assert _Const.STATUS_SUCCESS in captured.err
 
   # ------------------------------------------------
 
@@ -71,7 +72,8 @@ class TestMain:
     assert exc_info.value.code == 0
     assert "hidden" not in captured.out
     assert "Running:" not in captured.out
-    assert "Exit code" not in captured.out
+    assert "Exit code: 0" in captured.out
+    assert _Const.STATUS_SUCCESS in captured.err
 
   # ------------------------------------------------
 
@@ -82,7 +84,8 @@ class TestMain:
     with pytest.raises(SystemExit):
       main(["--no-output", "--sec", "1", "sleep", "10"])
     captured = capsys.readouterr()
-    assert "Timeout exceeded" in captured.err
+    assert "Timed out after 1.0 seconds" in captured.err
+    assert "Exit code:" in captured.out
 
   # ------------------------------------------------
 

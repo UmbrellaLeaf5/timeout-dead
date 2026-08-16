@@ -31,7 +31,7 @@ def run_command(
   signal_name: str = _Const.DEFAULT_SIGNAL_NAME,
   no_output: bool = False,
   capture_output: bool = False,
-) -> int:
+) -> tuple[int, bool]:
   """
   Run a command with timeout via bash.
 
@@ -43,12 +43,13 @@ def run_command(
     capture_output (bool): capture and format stdout/stderr
 
   Returns:
-    int: process return code (-1 on launch error)
+    tuple[int, bool]: process return code and whether the timeout was reached
   """
 
   signal_num = _Const.SIGNAL_MAP.get(signal_name, signal.SIGTERM)
   process: subprocess.Popen[bytes] | subprocess.Popen[str] | None = None
   timer: threading.Timer | None = None
+  timed_out = threading.Event()
   job_handle: HANDLE | None = None
   con_in_fd: int | None = None
   job_closed: bool = False
@@ -116,7 +117,7 @@ def run_command(
     timer = threading.Timer(
       timeout,
       kill_with_timeout,
-      args=(process, timeout, signal_num),
+      args=(process, signal_num, timed_out),
     )
 
     timer.start()
@@ -132,7 +133,7 @@ def run_command(
     timer.cancel()
     timer.join()
 
-    return process.returncode
+    return process.returncode, timed_out.is_set()
 
   except Exception as e:
     if timer:
@@ -144,7 +145,7 @@ def run_command(
 
     write_stderr(f"{_Const.msg_exec_error(e)}{_Const.NEWLINE}")
 
-    return _Const.EXEC_ERROR_RETURN_CODE
+    return _Const.EXEC_ERROR_RETURN_CODE, False
 
   finally:
     if con_in_fd is not None:

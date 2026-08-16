@@ -3,6 +3,7 @@
 import os
 import signal
 import subprocess
+import threading
 import time
 from ctypes.wintypes import HANDLE
 
@@ -112,18 +113,19 @@ def terminate_process(
 
 def kill_with_timeout(
   process: subprocess.Popen[bytes] | subprocess.Popen[str],
-  timeout: float,
   signal_num: int = signal.SIGTERM,
+  timed_out: threading.Event | None = None,
 ) -> None:
   """Kill the process after timeout with two-stage logic."""
 
   if process.poll() is not None:
     return
 
+  if timed_out is not None:
+    timed_out.set()
+
   terminate_process(process, signal_num=signal_num)
   time.sleep(_Const.GRACE_PERIOD_S)
 
   if process.poll() is None:
     terminate_process(process)
-
-  _write_error_line(_Const.msg_timeout(timeout))

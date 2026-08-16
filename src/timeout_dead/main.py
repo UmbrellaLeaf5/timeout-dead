@@ -5,7 +5,7 @@
 import sys
 
 from timeout_dead.cli.arguments import parse_arguments
-from timeout_dead.cli.output import write_stderr, write_stdout
+from timeout_dead.cli.output import write_status, write_stderr, write_stdout
 from timeout_dead.constants import _Const
 from timeout_dead.runner import run_command
 
@@ -43,7 +43,7 @@ def main(argv: list[str] | None = None) -> None:
     if not capture_output:
       write_stdout(f"{_Const.STDOUT_TITLE}{_Const.BLANK_LINE}")
 
-  return_code = run_command(
+  return_code, timed_out = run_command(
     command_string,
     timeout=args.sec,
     signal_name=args.signal,
@@ -51,11 +51,16 @@ def main(argv: list[str] | None = None) -> None:
     capture_output=capture_output,
   )
 
-  if not args.no_output:
-    if not capture_output:
-      write_stdout(_Const.NEWLINE)
+  if not args.no_output and not capture_output:
+    write_stdout(_Const.NEWLINE)
 
-    write_stdout(f"{_Const.EXIT_CODE_TITLE}: {return_code}{_Const.BLANK_LINE}")
+  write_stdout(f"{_Const.EXIT_CODE_TITLE}: {return_code}{_Const.BLANK_LINE}")
+
+  if timed_out:
+    write_status(_Const.msg_timeout(args.sec), _Const.ANSI_RED)
+
+  elif return_code == 0:
+    write_status(_Const.STATUS_SUCCESS, _Const.ANSI_GREEN)
 
   sys.exit(return_code)
 

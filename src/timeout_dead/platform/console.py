@@ -1,7 +1,9 @@
 """Console detection helpers."""
 
 import ctypes
+import importlib
 import sys
+from typing import TextIO
 
 from timeout_dead.constants import _Const
 
@@ -14,9 +16,13 @@ def _is_console_handle(fd: int) -> bool:
   """Return True iff *fd* is backed by a real Windows console."""
 
   try:
-    import msvcrt  # noqa: PLC0415  — Windows-only, imported lazily
+    msvcrt = importlib.import_module(_Const.MSVCRT_MODULE)
+    get_osf_handle = getattr(msvcrt, _Const.GET_OSF_HANDLE, None)
 
-    handle = msvcrt.get_osfhandle(fd)  # pyright: ignore[reportAttributeAccessIssue]
+    if get_osf_handle is None:
+      return False
+
+    handle = get_osf_handle(fd)
     mode = ctypes.c_uint32()
     get_console_mode = getattr(_Const.KERNEL32, _Const.GET_CONSOLE_MODE, None)
 
@@ -26,6 +32,59 @@ def _is_console_handle(fd: int) -> bool:
     return False
 
   except (OSError, ValueError, ImportError):
+    return False
+
+
+# ------------------------------------------------
+
+
+def _enable_windows_virtual_terminal(fd: int) -> bool:
+  """Enable ANSI processing for one real Windows console stream."""
+
+  if not _Const.IS_WINDOWS:
+    return True
+
+  try:
+    msvcrt = importlib.import_module(_Const.MSVCRT_MODULE)
+    get_osf_handle = getattr(msvcrt, _Const.GET_OSF_HANDLE, None)
+
+    if get_osf_handle is None:
+      return False
+
+    handle = get_osf_handle(fd)
+    mode = ctypes.c_uint32()
+    get_console_mode = getattr(_Const.KERNEL32, _Const.GET_CONSOLE_MODE, None)
+    set_console_mode = getattr(_Const.KERNEL32, _Const.SET_CONSOLE_MODE, None)
+
+    if get_console_mode is None or set_console_mode is None:
+      return False
+
+    if not get_console_mode(handle, ctypes.byref(mode)):
+      return False
+
+    next_mode = mode.value | _Const.ENABLE_VIRTUAL_TERMINAL_PROCESSING
+    return bool(set_console_mode(handle, next_mode))
+
+  except (OSError, ValueError, ImportError):
+    return False
+
+
+# ------------------------------------------------
+
+
+def stream_supports_ansi(stream: TextIO) -> bool:
+  """Return True when a stream is a TTY with ANSI support."""
+
+  if not stream.isatty():
+    return False
+
+  if not _Const.IS_WINDOWS:
+    return True
+
+  try:
+    return _enable_windows_virtual_terminal(stream.fileno())
+
+  except (OSError, ValueError, AttributeError):
     return False
 
 

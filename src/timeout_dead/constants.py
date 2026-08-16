@@ -31,6 +31,10 @@ class _Const:
   TIMEOUT_TITLE: str = "Timeout"
   TIMEOUT_UNIT: str = "seconds"
   EXIT_CODE_TITLE: str = "Exit code"
+  STATUS_SUCCESS: str = "Completed successfully"
+  ANSI_GREEN: str = "\x1b[32m"
+  ANSI_RED: str = "\x1b[31m"
+  ANSI_RESET: str = "\x1b[0m"
 
   MSG_NO_COMMAND: str = "Error: no command specified"
   MSG_BASH_NOT_FOUND: str = "bash not found in PATH"
@@ -77,7 +81,7 @@ class _Const:
 
   @staticmethod
   def msg_timeout(timeout_s: float) -> str:
-    return f"Timeout exceeded {timeout_s} {_Const.TIMEOUT_UNIT}"
+    return f"Timed out after {timeout_s} {_Const.TIMEOUT_UNIT}"
 
   # ------------------------------------------------
 
