@@ -53,7 +53,7 @@ def main(argv: list[str] | None = None) -> None:
   )
 
   if not args.no_output and not capture_output:
-    write_stdout(_Const.NEWLINE)
+    write_stdout(_Const.BLANK_LINE)
 
   write_stdout(f"{_Const.EXIT_CODE_TITLE}: {return_code}{_Const.BLANK_LINE}")
 

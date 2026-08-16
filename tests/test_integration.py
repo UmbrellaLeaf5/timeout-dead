@@ -142,12 +142,12 @@ class TestIntegration:
 
   # ------------------------------------------------
 
-  def test_cli_default_output_has_no_separator(self) -> None:
+  def test_cli_default_output_separates_command_output_from_exit_code(self) -> None:
     result = run_cli("echo", "hello-flush")
     expected_stdout = (
       "Running: echo hello-flush\n\n"
       "Timeout: 60.0 seconds\n\n\n"
-      "Out:\n\nhello-flush\n\nExit code: 0\n\n"
+      "Out:\n\nhello-flush\n\n\nExit code: 0\n\n"
     )
     assert result.returncode == 0
     assert result.stdout == expected_stdout

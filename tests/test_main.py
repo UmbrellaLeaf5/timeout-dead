@@ -2,6 +2,7 @@
 
 import pytest
 
+import timeout_dead.main as main_module
 from timeout_dead.constants import _Const
 from timeout_dead.main import main
 
@@ -52,12 +53,20 @@ class TestMain:
   def test_main_success(
     self,
     capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
   ) -> None:
+    def run_command(*args: object, **kwargs: object) -> tuple[int, bool]:
+      print("hello")
+      return 0, False
+
+    monkeypatch.setattr(main_module, "run_command", run_command)
+
     with pytest.raises(SystemExit) as exc_info:
       main(["echo", "hello"])
     captured = capsys.readouterr()
     assert exc_info.value.code == 0
     assert "hello" in captured.out
+    assert "hello\n\n\nExit code: 0" in captured.out
     assert _Const.STATUS_SUCCESS in captured.err
 
   # ------------------------------------------------
