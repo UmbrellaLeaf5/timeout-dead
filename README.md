@@ -48,7 +48,7 @@ timeout-dead --sec 0.5 "potentially-hanging-tool"
 # Use SIGINT instead of default SIGTERM
 timeout-dead --signal INT --sec 30 "long-running-server"
 
-# Run silently — suppress all normal output
+# Suppress child-process output while retaining the final exit code and status
 timeout-dead --no-output "curl -s https://example.com"
 
 # Capture stderr/stdout with a five-line live tail preview
@@ -82,31 +82,51 @@ Default output format:
 
 ```text
 Running: git status --short --branch
+
 Timeout: 60.0 seconds
+
 
 Out:
 
-<command output>
+<full command stdout/stderr>
 
 Exit code: 0
+
+Completed successfully
 ```
 
 Captured final output format (`--capture-output`):
 
 ```text
 Running: git status --short --branch
+
 Timeout: 60.0 seconds
 
 Err:
 
-<stderr text>
+
+<full stderr text>
 
 Out:
 
-<stdout text>
+
+<full stdout text>
+
 
 Exit code: 0
+
+Completed successfully
 ```
+
+`Exit code: <code>` is always printed, including with `--no-output`. After a successful
+command, `timeout-dead` prints `Completed successfully`; after a timeout, it prints
+`Timed out after <seconds> seconds`. These final status messages are written to stderr and
+are green for success or red for timeout when stderr is an ANSI-capable interactive terminal.
+Redirected output and CI logs always receive plain text without ANSI escape sequences.
+
+Long commands are shortened only in the `Running:` display line to keep the terminal readable.
+Commands of up to 35 characters are shown in full. Longer commands show their first 25 and last
+5 characters, separated by ` ... `. The complete command is still executed unchanged.
 
 In capture mode, `timeout-dead` reads stdout and stderr concurrently while the command is
 still running. When stdout is an interactive terminal, the `Err:` and `Out:` blocks are
@@ -138,7 +158,8 @@ Flag priority:
 
 1. `-h` / `--help` and `-v` / `--version` exit immediately and ignore all other arguments.
 2. `--sec` and `--signal` apply whenever a command is executed.
-3. `--no-output` suppresses all normal output and has priority over `--capture-output`.
+3. `--no-output` suppresses child-process output and start headers, has priority over
+   `--capture-output`, and still prints the final exit code and status.
 4. `--capture-output` is enabled only when `--no-output` is not set.
 5. `COMMAND` is required unless `-h` / `--help` or `-v` / `--version` is used.
 
@@ -146,11 +167,12 @@ Flag priority:
 
 1. `timeout-dead` starts the command in a new process group (Unix) / console group (Windows).
 2. A background timer waits for the specified timeout.
-3. If the command finishes in time, its output and exit code are forwarded.
+3. If the command finishes in time, its output is forwarded, followed by its exit code and a
+   `Completed successfully` status.
 4. If the timeout expires:
    - The chosen signal is sent to the process group.
    - After 1 second, if the process is still running, `SIGKILL` (Unix) or `process.kill()` (Windows) is sent.
-   - A `Timeout exceeded` message is printed to stderr.
+    - The exit code is printed, followed by `Timed out after <seconds> seconds` on stderr.
 
 > **Windows signal note:** On Windows, `CTRL_BREAK_EVENT` (used for `TERM` and `HUP`) is sent to the main process only — child processes may not receive it. They will be force-killed after the 1-second grace period. For critical cleanup, use `KILL` or ensure the parent handles cleanup.
 
@@ -199,6 +221,10 @@ Python's built-in `subprocess` timeout only kills the direct child, not its enti
 ## For AI agents
 
 If you build agents that execute shell commands, `timeout-dead` is essential infrastructure. Agents frequently generate commands that hang — waiting for input, entering infinite loops, or starting interactive programs.
+
+For a recorded example of an agent recovering from a failed service-readiness check, see
+[AI Agent Recovery Example](./EXAMPLE.md). The session used `timeout-dead` 0.4.4 and preserves
+its original agent commentary and command output.
 
 Instead of agents freezing indefinitely, wrap every command:
 
