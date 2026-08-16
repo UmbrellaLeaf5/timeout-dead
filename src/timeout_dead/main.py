@@ -5,7 +5,7 @@
 import sys
 
 from timeout_dead.cli.arguments import parse_arguments
-from timeout_dead.cli.output import write_status, write_stderr, write_stdout
+from timeout_dead.cli.output import format_command_preview, write_status, write_stderr, write_stdout
 from timeout_dead.constants import _Const
 from timeout_dead.runner import run_command
 
@@ -35,7 +35,8 @@ def main(argv: list[str] | None = None) -> None:
     capture_output = False
 
   if not args.no_output:
-    write_stdout(f"{_Const.RUNNING_TITLE}: {command_string}{_Const.BLANK_LINE}")
+    command_preview = format_command_preview(command_string)
+    write_stdout(f"{_Const.RUNNING_TITLE}: {command_preview}{_Const.BLANK_LINE}")
     write_stdout(
       f"{_Const.TIMEOUT_TITLE}: {args.sec} {_Const.TIMEOUT_UNIT}{_Const.CAPTURE_BLOCK_GAP}"
     )

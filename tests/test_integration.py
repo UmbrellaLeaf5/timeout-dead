@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from tests.helpers import run_cli
+from timeout_dead.cli.output import format_command_preview
 from timeout_dead.constants import _Const
 
 
@@ -161,7 +162,7 @@ class TestIntegration:
     command = "printf 'alpha-capture\n'"
     result = run_cli("--capture-output", command)
     expected_stdout = (
-      f"Running: {command}\n"
+      f"Running: {format_command_preview(command)}\n"
       "\n"
       "Timeout: 60.0 seconds\n"
       "\n\n"
@@ -191,7 +192,7 @@ class TestIntegration:
     command = "printf 'alpha-capture'"
     result = run_cli("--capture-output", command)
     expected_stdout = (
-      f"Running: {command}\n"
+      f"Running: {format_command_preview(command)}\n"
       "\n"
       "Timeout: 60.0 seconds\n"
       "\n\n"

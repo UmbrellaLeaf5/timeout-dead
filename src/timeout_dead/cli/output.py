@@ -6,6 +6,21 @@ from timeout_dead.constants import _Const
 from timeout_dead.platform.console import stream_supports_ansi
 
 
+# MARK: Formatting
+# ------------------------------------------------
+
+
+def format_command_preview(command: str) -> str:
+  """Shorten long commands for the Running line."""
+
+  if len(command) <= _Const.COMMAND_PREVIEW_MAX_LENGTH:
+    return command
+
+  prefix = command[: _Const.COMMAND_PREVIEW_PREFIX_LENGTH]
+  suffix = command[-_Const.COMMAND_PREVIEW_SUFFIX_LENGTH :]
+  return f"{prefix}{_Const.COMMAND_PREVIEW_SEPARATOR}{suffix}"
+
+
 # MARK: Public API
 # ------------------------------------------------
 

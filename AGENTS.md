@@ -135,6 +135,7 @@ src/myproject/
 - **Core logic** lives in `core/` and has zero dependencies on CLI, HTTP, or file I/O. Pure domain logic only.
 - **CLI layer** delegates to core services — never contains business logic.
 - **Configuration** uses `pydantic.BaseModel` or `dataclasses.dataclass` for typed, validated settings loaded from environment, config files, or CLI arguments.
+- Keep `src/timeout_dead/main.py` limited to imports, the `main()` entry-point function, and the `if __name__ == "__main__": main()` guard. Define helpers, formatters, constants, and other top-level declarations in modules that match their responsibility, then import them into `main.py`.
 
 ### Dependency Management
 
