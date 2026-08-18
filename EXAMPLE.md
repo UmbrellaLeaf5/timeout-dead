@@ -33,11 +33,21 @@ time-d -c "nohup ./gradlew bootRun --args='--spring.profiles.active=dev' > /tmp/
 
 ```
 Running: nohup ./gradlew bootRun --args='--spring.profiles.active=dev' > /tmp/root-backend.log 2>&1 & echo PID=$!
+
 Timeout: 60.0 seconds
+
+
 Err:
+
+
 Out:
+
+
 PID=979
+
+
 Exit code: 0
+
 ```
 
 The launch command succeeds and returns PID `979`, so the agent moves on to waiting for the service to report that it is ready.
@@ -60,11 +70,20 @@ time-d -c --sec 70 "while ! grep -q 'Started RootApplicationKt' /tmp/root-backen
 
 ```
 Running: while ! grep -q 'Started RootApplicationKt' /tmp/root-backend.log 2>/dev/null; do sleep 3; done && echo READY
+
 Timeout: 70.0 seconds
-Err:
-Out:
+
+
 Timeout exceeded 70.0 seconds
+
+Err:
+
+
+Out:
+
+
 Exit code: 3221225786
+
 ```
 
 The timeout is the first sign that the readiness check is wrong. The agent is waiting for `Started RootApplicationKt`, but that string never appears in the log. Because the loop has no exit path until `grep` matches, it would otherwise keep running.
@@ -91,15 +110,25 @@ time-d -c "tail -30 /tmp/root-backend.log"
 
 ```
 Running: tail -30 /tmp/root-backend.log
+
 Timeout: 60.0 seconds
+
+
 Err:
+
+
 Out:
+
+
 2026-08-01T00:07:26.541+03:00  INFO 17144 --- [factory-root] [           main] s.g.d.d.f.r.s.c.ExceptionModeInitializer : Initialized Application Exception Handling with mode: dev
 2026-08-01T00:07:29.230+03:00  INFO 17144 --- [factory-root] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8081 (http) with context path '/'
 2026-08-01T00:07:29.250+03:00  INFO 17144 --- [factory-root] [           main] s.g.d.d.f.root.FactoryApplicationKt      : Started FactoryApplicationKt in 16.775 seconds (process running for 17.481)
 2026-08-01T00:07:29.339+03:00  WARN 17144 --- [factory-root] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /api-docs endpoint is enabled by default...
 ...
+
+
 Exit code: 0
+
 ```
 
 **Agent's realization:**
